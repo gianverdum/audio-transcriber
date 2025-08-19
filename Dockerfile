@@ -2,7 +2,7 @@
 FROM python:3.11-slim
 
  # Build arguments
-ARG APP_PORT=8000
+ARG APP_PORT
 
  # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -40,8 +40,8 @@ RUN uv sync --frozen
 RUN mkdir -p /home/appuser/.cache && chown -R appuser:appuser /app /home/appuser/.cache
 USER appuser
 
- # Expose port
+ # Expose port dynamically
 EXPOSE ${APP_PORT}
 
  # Default command
-CMD ["sh", "-c", "uv run uvicorn audio_transcriber.api.main:app --host 0.0.0.0 --port ${APP_PORT}"]
+CMD ["sh", "-c", "uv run uvicorn audio_transcriber.api.main:app --host 0.0.0.0 --port $APP_PORT"]

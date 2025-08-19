@@ -75,17 +75,21 @@ uv run python scripts/setup_env.py
 1. Get your key at: https://platform.openai.com/account/api-keys
 2. Edit the `.env` file and configure:
    ```bash
-   # Required
+   # REQUIRED - OpenAI API Configuration
    OPENAI_API_KEY=sk-proj-your_real_key_here
    
-   # Server configurations (optional)
+   # API Server Configuration (optional)
    SERVER_HOST=127.0.0.1
-   SERVER_PORT=8000
-   SERVER_RELOAD=false
+   SERVER_PORT=8001
+   DOCKER_PORT=8000
    
-   # Other configurations (optional)
+   # Processing Configuration (optional)
    MAX_FILE_SIZE_MB=25
    LOG_LEVEL=INFO
+   
+   # Development Configuration (optional)
+   # SERVER_RELOAD=false
+   # DEBUG=false
    ```
 
 **Alternative: Environment variable**
@@ -191,6 +195,8 @@ uv run python -c "from audio_transcriber.core.config import settings; print(f'Po
 | `SERVER_PORT` | int | `8000` | Server Port |
 | `SERVER_WORKERS` | int | `1` | Number of Workers |
 | `SERVER_RELOAD` | bool | `false` | Auto-reload development |
+| **DOCKER** |
+| `DOCKER_PORT` | int | `8000` | Docker exposed port (requires rebuild) |
 | **API** |
 | `API_TITLE` | string | `Audio Transcriber API` | API Title |
 | `API_VERSION` | string | `1.0.0` | API Version |
@@ -208,6 +214,8 @@ uv run python -c "from audio_transcriber.core.config import settings; print(f'Po
 | `SAVE_LOGS` | bool | `false` | Save Logs in File |
 
 > **💡 Tip:** Values of type `bool` should be `true` or `false` (lower case). Commented values `#` use setup default.
+
+> **🐳 Docker Note:** Changing `DOCKER_PORT` requires rebuilding the Docker image with `docker compose build` because the port is set as a build argument.
 
 ## 📖 How to Use
 
@@ -246,16 +254,70 @@ uv run uvicorn audio_transcriber.api.main:app --reload
 
 ### 3️⃣ Docker
 
+#### Quick Start
+```bash
+# Using docker-compose (recommended - auto loads .env)
+docker compose up
+
+# Access API at: http://localhost:8001 (or your configured DOCKER_PORT)
+```
+
+#### Manual Docker Commands
 ```bash
 # Build image
-docker build -f docker/Dockerfile -t audio-transcriber .
+docker build -t audio-transcriber .
 
-# Execute container
-docker run -p 8000:8000 -e OPENAI_API_KEY=your_key_audio-transcriber
+# Run container with manual env
+docker run -p 8001:8001 -e OPENAI_API_KEY=your_key audio-transcriber
+```
 
-# Or use docker-compose
-cd docker
-docker-compose up
+#### 🔧 Docker Configuration
+
+Docker configuration is done through the `.env` file:
+
+```bash
+# Docker exposed port (maps to host)
+DOCKER_PORT=8000
+
+# Other variables are automatically loaded
+OPENAI_API_KEY=your_key_here
+LOG_LEVEL=INFO
+MAX_FILE_SIZE_MB=25
+```
+
+**docker-compose.yml features:**
+- ✅ **Auto .env loading**: Automatically loads `../env` 
+- ✅ **Configurable port**: Uses `DOCKER_PORT` from .env
+- ✅ **Health checks**: Built-in health monitoring
+- ✅ **Non-root execution**: Secure container execution
+
+#### ⚠️ Important: Build Requirements
+
+When changing Docker-related variables in `.env`, you **MUST rebuild** the image:
+
+```bash
+# Variables that require rebuild:
+# - DOCKER_PORT (used as build argument)
+# - Any configuration affecting the Docker image
+
+# Rebuild after changing these variables:
+docker compose build
+docker compose up
+```
+
+**Why rebuild is needed:**
+- `DOCKER_PORT` is passed as build argument (`APP_PORT`)
+- `EXPOSE` directive is "baked" into the image
+- Container startup command uses the build-time port
+
+#### 🐳 Docker Production Deploy
+```bash
+# Build and tag for production
+docker build -t your-registry/audio-transcriber:latest .
+docker push your-registry/audio-transcriber:latest
+
+# Deploy with docker-compose
+docker compose -f docker-compose.yml up -d
 ```
 
 ### 4️⃣ AWS Lambda
@@ -347,6 +409,7 @@ audio-transcriber/
 │       ├── cli.py               # Command line interface
 │       ├── core/                # Main logic
 │       │   ├── __init__.py
+│       │   ├── config.py        # Configuration management
 │       │   └── transcriber.py   # AudioTranscriber class
 │       └── api/                 # API REST
 │           ├── __init__.py
@@ -360,13 +423,12 @@ audio-transcriber/
 │   ├── test_env.py             # configuration test
 │   ├── test_api.py             # API test
 │   └── test_setup.py           # Full verification
-├── docker/                      # Docker configuration
-│   ├── Dockerfile
-│   └── docker-compose.yml
 ├── aws/                         # Deploy AWS Lambda
 │   ├── template.yaml           # SAM template
 │   ├── deploy.sh               # Deploy script
 │   └── lambda_handler.py       # Handler Lambda
+├── Dockerfile                   # Docker container configuration
+├── docker-compose.yml          # Docker Compose configuration
 ├── .env.example                # Configuration example
 ├── .env                       # Your configuration (dot not commit)
 ├── pyproject.toml              # Project configuration
@@ -401,12 +463,11 @@ uv run pytest && uv run black --check src && uv run isort --check src && uv run 
 ### Docker
 ```bash
 # Build and push to registry
-docker build -f docker/Dockerfile -t seu-registry/audio-transcriber:latest .
+docker build -t seu-registry/audio-transcriber:latest .
 docker push seu-registry/audio-transcriber:latest
 
 # Deploy with docker-compose
-cd docker
-docker-compose -f docker-compose.yml up -d
+docker compose -f docker-compose.yml up -d
 ```
 
 ### AWS Lambda
@@ -491,6 +552,12 @@ uv run audio-transcriber server
 
 # Production server (temporary override)
 uv run audio-transcriber server --host 0.0.0.0 --port 80 --workers 4
+
+# Docker development (auto loads .env)
+docker compose up
+
+# Docker rebuild (after changing DOCKER_PORT)
+docker compose build && docker compose up
 
 # Local transcription
 uv run audio-transcriber transcribe ./my_audios -o result.xlsx
