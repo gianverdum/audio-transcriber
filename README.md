@@ -296,7 +296,7 @@ result = await service.transcribe_single_file(
 
 The tool generates an Excel file with two sheets:
 
-### "Transcricoes" Sheet
+### "Transcription" Sheet
 - **ID**: Sequential numbering
 - **Filename**: Original audio name
 - **Transcription**: Transcribed text

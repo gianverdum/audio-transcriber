@@ -1,11 +1,15 @@
  # Dockerfile for Audio Transcriber API
 FROM python:3.11-slim
 
+ # Build arguments
+ARG APP_PORT=8000
+
  # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    APP_PORT=${APP_PORT}
 
  # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -20,6 +24,7 @@ WORKDIR /app
 
  # Copy configuration files
 COPY pyproject.toml uv.lock* ./
+COPY README.md ./
 
  # Install uv
 RUN pip install uv
@@ -31,12 +36,12 @@ COPY .env.example .env
  # Install dependencies
 RUN uv sync --frozen
 
- # Switch to non-root user
-RUN chown -R appuser:appuser /app
+ # Create cache directory and switch to non-root user
+RUN mkdir -p /home/appuser/.cache && chown -R appuser:appuser /app /home/appuser/.cache
 USER appuser
 
  # Expose port
-EXPOSE 8000
+EXPOSE ${APP_PORT}
 
  # Default command
-CMD ["uv", "run", "uvicorn", "audio_transcriber.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uv run uvicorn audio_transcriber.api.main:app --host 0.0.0.0 --port ${APP_PORT}"]
