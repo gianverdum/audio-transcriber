@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  audio-transcriber-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: audio-transcriber-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LOG_LEVEL=INFO
+      - MAX_FILE_SIZE_MB=25
+    volumes:
+      # Volume para logs (opcional)
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx para proxy reverso (opcional, para produção)
+  nginx:
+    image: nginx:alpine
+    container_name: audio-transcriber-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - audio-transcriber-api
+    profiles:
+      - production
+
+volumes:
+  logs:

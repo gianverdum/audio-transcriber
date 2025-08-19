@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Audio Transcriber Lambda API
+
+Globals:
+  Function:
+    Timeout: 900  # 15 minutos (máximo para Lambda)
+    MemorySize: 1024
+    Runtime: python3.11
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+        MAX_FILE_SIZE_MB: 25
+        API_DELAY: 0.5
+
+Parameters:
+  OpenAIApiKey:
+    Type: String
+    Description: OpenAI API Key
+    NoEcho: true
+  
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Deployment stage
+
+Resources:
+  # Lambda Function
+  AudioTranscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'audio-transcriber-${Stage}'
+      CodeUri: ../src/
+      Handler: aws.lambda_handler.lambda_handler
+      Description: Audio transcription using OpenAI Whisper
+      Environment:
+        Variables:
+          OPENAI_API_KEY: !Ref OpenAIApiKey
+          STAGE: !Ref Stage
+      Events:
+        # API Gateway para todos os endpoints
+        ApiGateway:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref AudioTranscriberApi
+        # Health check específico
+        HealthCheck:
+          Type: Api
+          Properties:
+            Path: /health
+            Method: GET
+            RestApiId: !Ref AudioTranscriberApi
+      # Políticas IAM
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: '*'
+
+  # API Gateway
+  AudioTranscriberApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'audio-transcriber-api-${Stage}'
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      # Configurações de timeout
+      EndpointConfiguration: REGIONAL
+      TracingEnabled: true
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          ThrottlingRateLimit: 100
+          ThrottlingBurstLimit: 200
+
+  # CloudWatch Log Group
+  AudioTranscriberLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/audio-transcriber-${Stage}'
+      RetentionInDays: 14
+
+  # S3 Bucket para arquivos temporários (opcional)
+  TempFilesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'audio-transcriber-temp-${Stage}-${AWS::AccountId}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteTempFiles
+            Status: Enabled
+            ExpirationInDays: 1  # Remove arquivos após 1 dia
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${AudioTranscriberApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}'
+    Export:
+      Name: !Sub '${AWS::StackName}-api-url'
+  
+  FunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt AudioTranscriberFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-function-arn'
+  
+  BucketName:
+    Description: S3 Bucket for temporary files
+    Value: !Ref TempFilesBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-bucket-name'
