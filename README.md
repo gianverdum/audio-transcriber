@@ -21,6 +21,21 @@ Ferramenta completa para transcrição automática de arquivos de áudio usando 
 
 ## 🚀 Instalação
 
+### Pré-requisitos
+
+Este projeto usa o **[uv](https://docs.astral.sh/uv/)** para gerenciamento de dependências Python. Se você ainda não tem o `uv` instalado:
+
+```bash
+# Instalar uv (Linux/macOS)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Instalar uv (Windows)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Ou via pip
+pip install uv
+```
+
 ### Opção 1: Usando UV (Recomendado)
 
 ```bash
@@ -28,14 +43,11 @@ Ferramenta completa para transcrição automática de arquivos de áudio usando 
 git clone <repository_url>
 cd audio-transcriber
 
-# Inicializa com uv
-uv init .
+# Sincroniza e instala todas as dependências
+uv sync
 
-# Adiciona dependências
-uv add openai pandas openpyxl
-
-# Instala dependências de desenvolvimento (opcional)
-uv add --dev pytest pytest-cov black isort flake8 mypy
+# Ou se preferir instalar o projeto em modo desenvolvimento
+uv pip install -e .
 ```
 
 ### Opção 2: Usando pip tradicional
@@ -85,24 +97,24 @@ export OPENAI_API_KEY="sua_chave_openai_aqui"
 
 ```bash
 # Transcrição local (modo tradicional)
-audio-transcriber transcribe /caminho/para/pasta/audios
-audio-transcriber transcribe /caminho/para/pasta/audios -o minhas_transcricoes.xlsx
+uv run audio-transcriber transcribe /caminho/para/pasta/audios
+uv run audio-transcriber transcribe /caminho/para/pasta/audios -o minhas_transcricoes.xlsx
 
 # Servidor API local
-audio-transcriber server
-audio-transcriber server --host 0.0.0.0 --port 8000 --reload
+uv run audio-transcriber server
+uv run audio-transcriber server --host 0.0.0.0 --port 8000 --reload
 
 # Compatibilidade: funciona sem subcomando
-audio-transcriber /caminho/para/pasta/audios -o resultado.xlsx
+uv run audio-transcriber /caminho/para/pasta/audios -o resultado.xlsx
 ```
 
 ### 2️⃣ API REST
 
 ```bash
-# Inicia servidor
-audio-transcriber server
+# Inicia servidor (recomendado)
+uv run audio-transcriber server
 
-# Ou diretamente
+# Ou diretamente com uvicorn
 uv run uvicorn audio_transcriber.api.main:app --reload
 ```
 
@@ -159,6 +171,8 @@ result = await service.transcribe_single_file(
     output_format="json"
 )
 ```
+
+> **💡 Dica:** Para usar em scripts Python, execute com `uv run python meu_script.py` para garantir que o ambiente virtual correto seja usado.
 
 ## 📊 Resultado
 
@@ -244,8 +258,8 @@ audio-transcriber/
 ## 🧪 Testes e Desenvolvimento
 
 ```bash
-# Testes unitários
-pytest
+# Executar testes unitários
+uv run pytest
 
 # Teste de configuração
 uv run python scripts/test_env.py
@@ -254,14 +268,14 @@ uv run python scripts/test_env.py
 uv run python scripts/test_api.py
 
 # Formatação de código
-black src tests examples
-isort src tests examples
+uv run black src tests examples
+uv run isort src tests examples
 
 # Verificação de tipos
-mypy src
+uv run mypy src
 
 # Todos os checks
-uv run pytest && black --check src && isort --check src && mypy src
+uv run pytest && uv run black --check src && uv run isort --check src && uv run mypy src
 ```
 
 ## � Deploy em Produção
