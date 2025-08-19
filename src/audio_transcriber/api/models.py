@@ -1,5 +1,5 @@
 """
-Modelos Pydantic para API do Audio Transcriber
+Pydantic Models for Audio Transcriber API
 """
 
 from typing import Optional, List, Literal
@@ -8,42 +8,42 @@ from datetime import datetime
 
 
 class TranscriptionRequest(BaseModel):
-    """Modelo para requisição de transcrição"""
-    
-    # Arquivo será enviado via multipart/form-data
+    """Model for transcription request"""
+
+    # File will be sent via multipart/form-data
     output_format: Literal["json", "txt", "xlsx", "csv"] = Field(
         default="json",
-        description="Formato de saída desejado"
+        description="Desired output format"
     )
-    
-    # Configurações opcionais
+
+    # Optional configurations
     max_file_size_mb: Optional[int] = Field(
         default=25,
-        description="Tamanho máximo do arquivo em MB",
+        description="Maximum file size in MB",
         ge=1,
         le=100
     )
     
     language: Optional[str] = Field(
         default=None,
-        description="Idioma do áudio (auto-detectado se não especificado)"
+        description="Language of the audio (auto-detected if not specified)"
     )
     
     response_format: Literal["text", "json", "verbose_json"] = Field(
         default="text",
-        description="Formato de resposta da OpenAI"
+        description="Response format from OpenAI"
     )
 
 
 class TranscriptionResponse(BaseModel):
-    """Modelo para resposta de transcrição"""
+    """Model for transcription response"""
     
     model_config = ConfigDict(
         json_encoders={datetime: lambda v: v.isoformat()},
         json_schema_extra={
             "example": {
                 "success": True,
-                "transcription": "Olá, este é um exemplo de transcrição de áudio.",
+                "transcription": "Hello, this is an example of audio transcription.",
                 "filename": "audio.mp3",
                 "file_size_mb": 2.5,
                 "processing_time_seconds": 1.8,
@@ -54,70 +54,70 @@ class TranscriptionResponse(BaseModel):
             }
         }
     )
-    
-    success: bool = Field(description="Se a transcrição foi bem-sucedida")
-    transcription: str = Field(description="Texto transcrito")
-    
-    # Metadados
-    filename: str = Field(description="Nome do arquivo original")
-    file_size_mb: float = Field(description="Tamanho do arquivo em MB")
-    processing_time_seconds: float = Field(description="Tempo de processamento")
-    timestamp: datetime = Field(description="Data/hora do processamento")
-    
-    # Informações técnicas
-    model_used: str = Field(default="whisper-1", description="Modelo usado")
+
+    success: bool = Field(description="If the transcription was successful")
+    transcription: str = Field(description="Transcribed text")
+
+    # Metadata
+    filename: str = Field(description="Original file name")
+    file_size_mb: float = Field(description="File size in MB")
+    processing_time_seconds: float = Field(description="Processing time in seconds")
+    timestamp: datetime = Field(description="Processing date/time")
+
+    # Technical information
+    model_used: str = Field(default="whisper-1", description="Model used")
     output_format: str = Field(description="Formato de saída")
-    
-    # Erro (se houver)
-    error: Optional[str] = Field(default=None, description="Mensagem de erro")
+
+    # Error (if any)
+    error: Optional[str] = Field(default=None, description="Error message")
 
 
 class BatchTranscriptionRequest(BaseModel):
-    """Modelo para transcrição em lote"""
-    
+    """Model for batch transcription"""
+
     output_format: Literal["json", "txt", "xlsx", "csv"] = Field(
         default="xlsx",
-        description="Formato de saída desejado"
+        description="Desired output format"
     )
     
     max_file_size_mb: Optional[int] = Field(
         default=25,
-        description="Tamanho máximo por arquivo em MB"
+        description="Maximum file size per file in MB"
     )
     
     include_metadata: bool = Field(
         default=True,
-        description="Incluir metadados na resposta"
+        description="Include metadata in the response"
     )
 
 
 class BatchTranscriptionResponse(BaseModel):
-    """Modelo para resposta de transcrição em lote"""
-    
+    """Model for batch transcription response"""
+
     model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
-    
-    success: bool = Field(description="Se o processamento foi bem-sucedido")
-    total_files: int = Field(description="Total de arquivos processados")
-    successful_transcriptions: int = Field(description="Transcrições bem-sucedidas")
-    failed_transcriptions: int = Field(description="Transcrições falhadas")
-    
-    # Resultados individuais
-    results: List[TranscriptionResponse] = Field(description="Resultados individuais")
-    
-    # Metadados do lote
-    processing_time_seconds: float = Field(description="Tempo total de processamento")
-    timestamp: datetime = Field(description="Data/hora do processamento")
-    output_format: str = Field(description="Formato de saída")
-    
-    # URL de download (para formatos de arquivo)
+
+    success: bool = Field(description="If the processing was successful")
+    total_files: int = Field(description="Total number of files processed")
+    successful_transcriptions: int = Field(description="Successful transcriptions")
+    failed_transcriptions: int = Field(description="Failed transcriptions")
+
+    # Individual results
+    results: List[TranscriptionResponse] = Field(description="Individual results")
+
+    # Batch metadata
+    processing_time_seconds: float = Field(description="Total processing time")
+    timestamp: datetime = Field(description="Processing date/time")
+    output_format: str = Field(description="Output format")
+
+    # Download URL (for file formats)
     download_url: Optional[str] = Field(
         default=None,
-        description="URL para download do arquivo gerado"
+        description="URL for downloading the generated file"
     )
 
 
 class HealthResponse(BaseModel):
-    """Modelo para resposta de health check"""
+    """Model for health check response"""
     
     model_config = ConfigDict(
         json_encoders={datetime: lambda v: v.isoformat()},
@@ -132,26 +132,26 @@ class HealthResponse(BaseModel):
             }
         }
     )
-    
-    status: Literal["healthy", "unhealthy"] = Field(description="Status da API")
-    version: str = Field(description="Versão da aplicação")
-    timestamp: datetime = Field(description="Data/hora da verificação")
-    
-    # Verificações de dependências
-    openai_api_available: bool = Field(description="Se a API da OpenAI está disponível")
-    
-    # Informações do sistema
-    supported_formats: List[str] = Field(description="Formatos de áudio suportados")
-    max_file_size_mb: int = Field(description="Tamanho máximo de arquivo")
+
+    status: Literal["healthy", "unhealthy"] = Field(description="API status")
+    version: str = Field(description="Application version")
+    timestamp: datetime = Field(description="Check date/time")
+
+    # Dependency checks
+    openai_api_available: bool = Field(description="If the OpenAI API is available")
+
+    # System information
+    supported_formats: List[str] = Field(description="Supported audio formats")
+    max_file_size_mb: int = Field(description="Maximum file size")
 
 
 class ErrorResponse(BaseModel):
-    """Modelo para respostas de erro"""
+    """Model for error responses"""
     
     model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
-    
-    error: str = Field(description="Tipo do erro")
-    message: str = Field(description="Mensagem de erro")
-    details: Optional[str] = Field(default=None, description="Detalhes adicionais")
-    timestamp: datetime = Field(description="Data/hora do erro")
-    request_id: Optional[str] = Field(default=None, description="ID da requisição")
+
+    error: str = Field(description="Error type")
+    message: str = Field(description="Error message")
+    details: Optional[str] = Field(default=None, description="Additional details")
+    timestamp: datetime = Field(description="Error date/time")
+    request_id: Optional[str] = Field(default=None, description="Request ID")

@@ -1,48 +1,48 @@
 #!/bin/bash
 
-# Script para deploy no AWS Lambda usando SAM CLI
+# Script for AWS Lambda deployment using SAM CLI
 
 set -e
 
-# Configurações
+# Configurations
 STACK_NAME="audio-transcriber"
 REGION="us-east-1"
 STAGE="dev"
 
-# Cores para output
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Deploy do Audio Transcriber para AWS Lambda${NC}"
+echo -e "${GREEN}🚀 Audio Transcriber Deploy to AWS Lambda${NC}"
 echo "=================================="
 
-# Verifica se SAM CLI está instalado
+# Check if SAM CLI is installed
 if ! command -v sam &> /dev/null; then
-    echo -e "${RED}❌ SAM CLI não encontrado. Instale em: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html${NC}"
+    echo -e "${RED}❌ SAM CLI not found. Install at: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html${NC}"
     exit 1
 fi
 
-# Verifica se AWS CLI está configurado
+# Check if AWS CLI is configured
 if ! aws sts get-caller-identity &> /dev/null; then
-    echo -e "${RED}❌ AWS CLI não configurado. Execute: aws configure${NC}"
+    echo -e "${RED}❌ AWS CLI not configured. Run: aws configure${NC}"
     exit 1
 fi
 
-# Solicita chave da OpenAI se não estiver no .env
+# Request OpenAI key if not in .env
 if [ -z "$OPENAI_API_KEY" ]; then
-    echo -e "${YELLOW}🔑 Chave da OpenAI não encontrada${NC}"
-    read -sp "Digite sua chave da OpenAI: " OPENAI_API_KEY
+    echo -e "${YELLOW}🔑 OpenAI key not found${NC}"
+    read -sp "Enter your OpenAI key: " OPENAI_API_KEY
     echo
 fi
 
 if [ -z "$OPENAI_API_KEY" ]; then
-    echo -e "${RED}❌ Chave da OpenAI é obrigatória${NC}"
+    echo -e "${RED}❌ OpenAI key is required${NC}"
     exit 1
 fi
 
-# Parâmetros opcionais
+# Optional parameters
 read -p "AWS Region (default: us-east-1): " input_region
 REGION=${input_region:-$REGION}
 
@@ -52,26 +52,26 @@ STAGE=${input_stage:-$STAGE}
 read -p "Stack Name (default: audio-transcriber): " input_stack
 STACK_NAME=${input_stack:-$STACK_NAME}
 
-echo -e "${GREEN}📋 Configurações do Deploy:${NC}"
+echo -e "${GREEN}📋 Deploy Configuration:${NC}"
 echo "  Stack Name: $STACK_NAME"
 echo "  Region: $REGION"
 echo "  Stage: $STAGE"
 echo
 
-# Confirma deploy
-read -p "Continuar com o deploy? (y/N): " confirm
+# Confirm deploy
+read -p "Continue with deploy? (y/N): " confirm
 if [[ $confirm != [yY] ]]; then
-    echo -e "${YELLOW}⏹️  Deploy cancelado${NC}"
+    echo -e "${YELLOW}⏹️  Deploy cancelled${NC}"
     exit 0
 fi
 
-# Navega para o diretório AWS
+# Navigate to AWS directory
 cd "$(dirname "$0")"
 
-echo -e "${GREEN}🔨 Fazendo build da aplicação...${NC}"
+echo -e "${GREEN}🔨 Building application...${NC}"
 sam build --template-file template.yaml
 
-echo -e "${GREEN}📦 Fazendo deploy...${NC}"
+echo -e "${GREEN}📦 Deploying...${NC}"
 sam deploy \
     --template-file .aws-sam/build/template.yaml \
     --stack-name "$STACK_NAME-$STAGE" \
@@ -84,23 +84,23 @@ sam deploy \
     --resolve-s3
 
 if [ $? -eq 0 ]; then
-    echo -e "${GREEN}✅ Deploy concluído com sucesso!${NC}"
+    echo -e "${GREEN}✅ Deploy completed successfully!${NC}"
     
-    # Obtém URL da API
+    # Get API URL
     API_URL=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME-$STAGE" \
         --region "$REGION" \
         --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
         --output text)
     
-    echo -e "${GREEN}🌐 URL da API: $API_URL${NC}"
-    echo -e "${GREEN}📖 Documentação: $API_URL/docs${NC}"
+    echo -e "${GREEN}🌐 API URL: $API_URL${NC}"
+    echo -e "${GREEN}📖 Documentation: $API_URL/docs${NC}"
     
-    # Testa health check
-    echo -e "${GREEN}🧪 Testando health check...${NC}"
+    # Test health check
+    echo -e "${GREEN}🧪 Testing health check...${NC}"
     curl -s "$API_URL/health" | python -m json.tool
     
 else
-    echo -e "${RED}❌ Erro no deploy${NC}"
+    echo -e "${RED}❌ Deploy error${NC}"
     exit 1
 fi

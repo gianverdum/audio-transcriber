@@ -1,6 +1,6 @@
 """
 Audio Transcriber Core Module
-Classe principal para transcrição de áudios usando OpenAI API
+Main class for audio transcription using OpenAI API
 """
 
 import os
@@ -13,27 +13,27 @@ from typing import List, Dict, Tuple, Optional
 import logging
 from dotenv import load_dotenv  # type: ignore[import]
 
-# Carrega variáveis de ambiente do arquivo .env
+# Load environment variables from .env file
 load_dotenv()
 
-# Configuração de logging
+# Logging configuration
 logger = logging.getLogger(__name__)
 
 class AudioTranscriber:
-    """Classe principal para transcrição de áudios"""
-    
-    # Formatos de áudio suportados pela OpenAI
+    """Main class for audio transcription"""
+
+    # Supported audio formats by OpenAI
     SUPPORTED_FORMATS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg', '.flac'}
     
     def __init__(self, api_key: str = None, **config):
         """
-        Inicializa o transcriber
+        Initializes the transcriber
         
         Args:
-            api_key: Chave da API OpenAI (se None, busca na variável de ambiente)
-            **config: Configurações adicionais (max_file_size_mb, api_delay, etc.)
+            api_key: OpenAI API key (if None, it looks in the environment variable)
+            **config: Additional configurations (max_file_size_mb, api_delay, etc.)
         """
-        # Configurações com valores padrão
+        # Default configuration values
         self.config = {
             'max_file_size_mb': int(os.getenv('MAX_FILE_SIZE_MB', 25)),
             'api_delay': float(os.getenv('API_DELAY', 0.5)),
@@ -43,45 +43,45 @@ class AudioTranscriber:
             'save_logs': os.getenv('SAVE_LOGS', 'false').lower() == 'true',
         }
         self.config.update(config)
-        
-        # Configura API key
+
+        # Sets API key
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError(
-                "Chave da OpenAI não encontrada.\n"
-                "Configure OPENAI_API_KEY no arquivo .env ou passe como parâmetro.\n"
-                "Veja o arquivo .env.example para instruções."
+                "OpenAI API key not found.\n"
+                "Set OPENAI_API_KEY in the .env file or pass it as a parameter.\n"
+                "See the .env.example file for instructions."
             )
-        
-        # Inicializa cliente OpenAI
+
+        # Initializes OpenAI client
         self.client = OpenAI(
             api_key=self.api_key,
             timeout=self.config['api_timeout']
         )
         self.results = []
-        
-        # Configura logging se necessário
+
+        # Logging configuration if needed
         if self.config['save_logs']:
             self._setup_logging()
     
     def _setup_logging(self):
-        """Configura logging baseado nas configurações"""
+        """Configures logging based on the settings"""
         log_level = getattr(logging, self.config['log_level'].upper(), logging.INFO)
-        
-        # Remove handlers existentes
+
+        # Remove existing handlers
         logger.handlers.clear()
-        
-        # Configura formatação
+
+        # Sets formatting
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
-        
-        # Handler para console
+
+        # Console handler
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-        
-        # Handler para arquivo se configurado
+
+        # File handler if configured
         if self.config['save_logs']:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             log_file = f"audio_transcriber_{timestamp}.log"
@@ -93,165 +93,165 @@ class AudioTranscriber:
     
     def find_audio_files(self, folder_path: str) -> List[Path]:
         """
-        Encontra todos os arquivos de áudio na pasta
-        
+        Finds all audio files in the folder
+
         Args:
-            folder_path: Caminho para a pasta com áudios
-            
+            folder_path: Path to the folder with audio files
+
         Returns:
-            Lista de caminhos dos arquivos de áudio
+            List of paths to audio files
         """
         folder = Path(folder_path)
         if not folder.exists():
-            raise FileNotFoundError(f"Pasta não encontrada: {folder_path}")
-        
+            raise FileNotFoundError(f"Folder not found: {folder_path}")
+
         audio_files = []
         for file_path in folder.rglob('*'):
             if file_path.is_file() and file_path.suffix.lower() in self.SUPPORTED_FORMATS:
                 audio_files.append(file_path)
-        
-        # Ordena os arquivos por nome
+
+        # Sorts files by name
         audio_files.sort(key=lambda x: x.name)
-        
-        logger.info(f"Encontrados {len(audio_files)} arquivos de áudio")
+
+        logger.info(f"Found {len(audio_files)} audio files")
         return audio_files
     
     def get_file_info(self, file_path: Path) -> Dict:
         """
-        Obtém informações do arquivo
-        
+        Obtains file information
+
         Args:
-            file_path: Caminho do arquivo
-            
+            file_path: Path to the file
+
         Returns:
-            Dicionário com informações do arquivo
+            Dictionary with file information
         """
         stat = file_path.stat()
         return {
-            'nome_arquivo': file_path.name,
-            'caminho_completo': str(file_path),
-            'tamanho_mb': round(stat.st_size / (1024 * 1024), 2),
-            'data_modificacao': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+            'file_name': file_path.name,
+            'full_path': str(file_path),
+            'size_mb': round(stat.st_size / (1024 * 1024), 2),
+            'modification_date': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
         }
     
     def transcribe_audio(self, file_path: Path, language: Optional[str] = None) -> Tuple[str, bool, str]:
         """
-        Transcreve um arquivo de áudio
-        
+        Transcribes an audio file
+
         Args:
-            file_path: Caminho do arquivo de áudio
-            language: Idioma do áudio (opcional, ex: 'pt', 'en', 'portuguese')
-            
+            file_path: Audio file path
+            language: Audio language (optional, e.g., 'pt', 'en', 'portuguese')
+
         Returns:
-            Tupla (transcrição, sucesso, erro)
+            Tuple (transcription, success, error)
         """
         try:
-            logger.info(f"Transcrevendo: {file_path.name}")
-            
+            logger.info(f"Transcribing: {file_path.name}")
+
             with open(file_path, "rb") as audio_file:
-                # Verifica o tamanho do arquivo usando configuração
+                # Checks file size against configuration
                 file_size = file_path.stat().st_size
                 max_size = self.config['max_file_size_mb'] * 1024 * 1024
                 if file_size > max_size:
-                    return "", False, f"Arquivo muito grande (>{self.config['max_file_size_mb']}MB)"
-                
-                # Parâmetros para a API
+                    return "", False, f"File too large (>{self.config['max_file_size_mb']}MB)"
+
+                # API parameters
                 api_params = {
                     "model": "whisper-1",
                     "file": audio_file,
                     "response_format": "text"
                 }
-                
-                # Adiciona idioma se especificado
+
+                # Adds language if specified
                 if language:
                     api_params["language"] = language
-                    logger.info(f"Idioma especificado: {language}")
-                
-                # Chama a API da OpenAI
+                    logger.info(f"Specified language: {language}")
+
+                # Calls the OpenAI API
                 transcription = self.client.audio.transcriptions.create(**api_params)
                 
                 return transcription, True, ""
                 
         except Exception as e:
-            error_msg = f"Erro na transcrição: {str(e)}"
+            error_msg = f"Error in transcription: {str(e)}"
             logger.error(f"{file_path.name}: {error_msg}")
             return "", False, error_msg
     
     def process_folder(self, folder_path: str, output_file: str = None) -> str:
         """
-        Processa todos os áudios de uma pasta
-        
+        Processes all audio files in a folder
+
         Args:
-            folder_path: Caminho da pasta com áudios
-            output_file: Nome do arquivo Excel de saída
-            
+            folder_path: Path to the folder with audio files
+            output_file: Name of the output Excel file
+
         Returns:
-            Caminho do arquivo Excel gerado
+            Path to the generated Excel file
         """
-        # Encontra arquivos de áudio
+        # Finds audio files
         audio_files = self.find_audio_files(folder_path)
         
         if not audio_files:
-            raise ValueError("Nenhum arquivo de áudio encontrado na pasta")
-        
-        # Prepara lista de resultados
+            raise ValueError("No audio files found in the folder")
+
+        # Prepares results list
         self.results = []
-        
-        # Processa cada arquivo
+
+        # Processes each file
         total_files = len(audio_files)
         successful_transcriptions = 0
         
         for i, file_path in enumerate(audio_files, 1):
-            logger.info(f"Processando {i}/{total_files}: {file_path.name}")
-            
-            # Obtém informações do arquivo
+            logger.info(f"Processing {i}/{total_files}: {file_path.name}")
+
+            # Obtains file information
             file_info = self.get_file_info(file_path)
-            
-            # Transcreve o áudio
+
+            # Transcribes the audio
             start_time = time.time()
             transcription, success, error = self.transcribe_audio(file_path)
             processing_time = round(time.time() - start_time, 2)
-            
-            # Armazena resultado
+
+            # Stores result
             result = {
                 'id': i,
-                'nome_arquivo': file_info['nome_arquivo'],
-                'caminho_completo': file_info['caminho_completo'],
-                'tamanho_mb': file_info['tamanho_mb'],
-                'data_modificacao': file_info['data_modificacao'],
-                'transcricao': transcription if success else "",
-                'sucesso': "Sim" if success else "Não",
-                'erro': error,
-                'tempo_processamento_s': processing_time,
-                'data_transcricao': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'file_name': file_info['file_name'],
+                'full_path': file_info['full_path'],
+                'size_mb': file_info['size_mb'],
+                'modification_date': file_info['modification_date'],
+                'transcription': transcription if success else "",
+                'success': "Yes" if success else "No",
+                'error': error,
+                'processing_time_s': processing_time,
+                'transcription_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
             
             self.results.append(result)
             
             if success:
                 successful_transcriptions += 1
-                logger.info(f"✓ Sucesso: {file_path.name}")
+                logger.info(f"✓ Success: {file_path.name}")
             else:
-                logger.error(f"✗ Falha: {file_path.name} - {error}")
-            
-            # Pequena pausa para evitar rate limiting (configurável)
+                logger.error(f"✗ Failure: {file_path.name} - {error}")
+
+            # Small pause to avoid rate limiting (configurable)
             time.sleep(self.config['api_delay'])
-        
-        # Gera arquivo Excel
+
+        # Generates Excel file
         if output_file is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            output_file = f"transcricoes_{timestamp}.xlsx"
-        
+            output_file = f"transcriptions_{timestamp}.xlsx"
+
         excel_path = self.save_to_excel(output_file)
         
         logger.info(f"""
         ═══════════════════════════════════════
-        PROCESSAMENTO CONCLUÍDO
+        PROCESS FINISHED
         ═══════════════════════════════════════
-        Total de arquivos: {total_files}
-        Transcrições bem-sucedidas: {successful_transcriptions}
-        Falhas: {total_files - successful_transcriptions}
-        Arquivo Excel gerado: {excel_path}
+        Total files: {total_files}
+        Successful transcriptions: {successful_transcriptions}
+        Failures: {total_files - successful_transcriptions}
+        Generated Excel file: {excel_path}
         ═══════════════════════════════════════
         """)
         
@@ -259,75 +259,75 @@ class AudioTranscriber:
     
     def save_to_excel(self, output_file: str) -> str:
         """
-        Salva os resultados em arquivo Excel
-        
+        Saves the results to an Excel file
+
         Args:
-            output_file: Nome do arquivo de saída
-            
+            output_file: Name of the output file
+
         Returns:
-            Caminho completo do arquivo gerado
+            Full path of the generated file
         """
         if not self.results:
-            raise ValueError("Nenhum resultado para salvar")
-        
-        # Cria DataFrame
+            raise ValueError("No results to save")
+
+        # Creates DataFrame
         df = pd.DataFrame(self.results)
-        
-        # Define a ordem das colunas
+
+        # Define the order of the columns
         columns_order = [
-            'id', 'nome_arquivo', 'transcricao', 'sucesso', 'erro',
-            'tamanho_mb', 'tempo_processamento_s', 'data_transcricao',
-            'data_modificacao', 'caminho_completo'
+            'id', 'file_name', 'transcription', 'success', 'error',
+            'size_mb', 'processing_time_s', 'transcription_date',
+            'modification_date', 'full_path'
         ]
         
         df = df[columns_order]
-        
-        # Salva no Excel com formatação
+
+        # Saves to Excel with formatting
         output_path = Path(output_file).resolve()
         
         with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
-            # Aba principal com todas as transcrições
-            df.to_excel(writer, sheet_name='Transcricoes', index=False)
-            
-            # Aba com resumo
+            # Main sheet with all transcriptions
+            df.to_excel(writer, sheet_name='Transcriptions', index=False)
+
+            # Summary sheet
             summary_data = {
-                'Métrica': [
-                    'Total de arquivos',
-                    'Transcrições bem-sucedidas',
-                    'Falhas',
-                    'Taxa de sucesso (%)',
-                    'Tamanho total (MB)',
-                    'Tempo total de processamento (s)',
-                    'Data do processamento'
+                'Metric': [
+                    'Total files',
+                    'Successful transcriptions',
+                    'Failures',
+                    'Success rate (%)',
+                    'Total size (MB)',
+                    'Total processing time (s)',
+                    'Processing date'
                 ],
-                'Valor': [
+                'Value': [
                     len(self.results),
-                    len([r for r in self.results if r['sucesso'] == 'Sim']),
-                    len([r for r in self.results if r['sucesso'] == 'Não']),
-                    round((len([r for r in self.results if r['sucesso'] == 'Sim']) / len(self.results)) * 100, 1),
-                    round(sum(r['tamanho_mb'] for r in self.results), 2),
-                    round(sum(r['tempo_processamento_s'] for r in self.results), 2),
+                    len([r for r in self.results if r['success'] == 'Yes']),
+                    len([r for r in self.results if r['success'] == 'No']),
+                    round((len([r for r in self.results if r['success'] == 'Yes']) / len(self.results)) * 100, 1),
+                    round(sum(r['size_mb'] for r in self.results), 2),
+                    round(sum(r['processing_time_s'] for r in self.results), 2),
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 ]
             }
             
             summary_df = pd.DataFrame(summary_data)
-            summary_df.to_excel(writer, sheet_name='Resumo', index=False)
-            
-            # Formatação das abas
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+
+            # Formatting the sheets
             workbook = writer.book
-            
-            # Formata aba de transcrições
-            transcricoes_sheet = writer.sheets['Transcricoes']
-            transcricoes_sheet.column_dimensions['B'].width = 25  # nome_arquivo
-            transcricoes_sheet.column_dimensions['C'].width = 50  # transcricao
-            transcricoes_sheet.column_dimensions['E'].width = 30  # erro
-            transcricoes_sheet.column_dimensions['J'].width = 40  # caminho_completo
-            
-            # Formata aba de resumo
-            resumo_sheet = writer.sheets['Resumo']
-            resumo_sheet.column_dimensions['A'].width = 30
-            resumo_sheet.column_dimensions['B'].width = 25
-        
-        logger.info(f"Arquivo Excel salvo: {output_path}")
+
+            # Formats transcription sheet
+            transcriptions_sheet = writer.sheets['Transcriptions']
+            transcriptions_sheet.column_dimensions['B'].width = 25  # file_name
+            transcriptions_sheet.column_dimensions['C'].width = 50  # transcription
+            transcriptions_sheet.column_dimensions['E'].width = 30  # error
+            transcriptions_sheet.column_dimensions['J'].width = 40  # full_path
+
+            # Formats summary sheet
+            summary_sheet = writer.sheets['Summary']
+            summary_sheet.column_dimensions['A'].width = 30
+            summary_sheet.column_dimensions['B'].width = 25
+
+        logger.info(f"Excel file saved: {output_path}")
         return str(output_path)

@@ -1,6 +1,6 @@
 """
-API FastAPI para Audio Transcriber
-Fornece endpoints REST para transcrição de áudios
+FastAPI API for Audio Transcriber
+Provides REST endpoints for audio transcription
 """
 
 import tempfile
@@ -24,61 +24,62 @@ from .models import (
 )
 from .service import TranscriptionService
 from ..core import AudioTranscriber
+from ..core.config import settings
 
-# Cria instância da aplicação
+# Create application instance using centralized configurations
 app = FastAPI(
-    title="Audio Transcriber API",
-    description="""
-    ## 🎵 API para Transcrição de Áudios usando OpenAI Whisper
+    title=settings.API_TITLE,
+    description=f"""
+    ## 🎵 {settings.API_TITLE}
     
-    Esta API permite transcrever arquivos de áudio em texto usando o modelo Whisper da OpenAI.
+    {settings.API_DESCRIPTION}
     
-    ### 📋 Formatos Suportados
-    - **Áudio**: mp3, mp4, mpeg, mpga, m4a, wav, webm, ogg, flac
-    - **Saída**: json, txt, xlsx, csv
+    ### 📋 Supported Formats
+    - **Audio**: mp3, mp4, mpeg, mpga, m4a, wav, webm, ogg, flac
+    - **Output**: json, txt, xlsx, csv
     
-    ### 🌍 Idiomas Suportados (ISO-639-1)
-    - `pt` - Português
-    - `en` - Inglês
-    - `es` - Espanhol
-    - `fr` - Francês
-    - `de` - Alemão
-    - `it` - Italiano
-    - `ja` - Japonês
-    - `ko` - Coreano
-    - `zh` - Chinês
-    - `ru` - Russo
-    - E muitos outros...
+    ### 🌍 Supported Languages (ISO-639-1)
+    - `pt` - Portuguese
+    - `en` - English
+    - `es` - Spanish
+    - `fr` - French
+    - `de` - German
+    - `it` - Italian
+    - `ja` - Japanese
+    - `ko` - Korean
+    - `zh` - Chinese
+    - `ru` - Russian
+    - And many others...
     
-    ### 📏 Limites
-    - **Tamanho máximo**: 25MB por arquivo
-    - **Timeout**: 30 segundos por arquivo
+    ### 📏 Limits
+    - **Maximum size**: 25MB per file
+    - **Timeout**: 30 seconds per file
     
-    ### 🚀 Endpoints Disponíveis
-    - `/transcribe` - Transcrição de arquivo único (resposta JSON)
-    - `/transcribe/batch` - Transcrição de múltiplos arquivos
-    - `/transcribe/download` - Transcrição com download direto do resultado
-    - `/languages` - Lista de idiomas suportados
-    - `/health` - Verificação de saúde da API
+    ### 🚀 Available Endpoints
+    - `/transcribe` - Single file transcription (JSON response)
+    - `/transcribe/batch` - Multiple files transcription
+    - `/transcribe/download` - Transcription with direct result download
+    - `/languages` - List of supported languages
+    - `/health` - API health check
     
-    ### ⚠️ Códigos de Erro Comuns
-    - **400**: Arquivo inválido, formato não suportado, ou parâmetros incorretos
-    - **413**: Arquivo muito grande (> 25MB)
-    - **422**: Dados de entrada mal formatados
-    - **503**: Serviço temporariamente indisponível
-    - **500**: Erro interno do servidor
+    ### ⚠️ Common Error Codes
+    - **400**: Invalid file, unsupported format, or incorrect parameters
+    - **413**: File too large (> 25MB)
+    - **422**: Malformed input data
+    - **503**: Service temporarily unavailable
+    - **500**: Internal server error
     
-    ### 💡 Dicas de Uso
-    1. **Idioma**: Use códigos ISO-639-1 de 2 letras (ex: 'pt', não 'pt-BR')
-    2. **Qualidade**: Áudios com boa qualidade geram melhores transcrições
-    3. **Formato**: MP3 e WAV são os formatos mais confiáveis
-    4. **Timeout**: Arquivos grandes podem levar mais tempo para processar
+    ### 💡 Usage Tips
+    1. **Language**: Use 2-letter ISO-639-1 codes (e.g., 'pt', not 'pt-BR')
+    2. **Quality**: Good quality audio generates better transcriptions
+    3. **Format**: MP3 and WAV are the most reliable formats
+    4. **Timeout**: Large files may take longer to process
     
-    ### 📖 Documentação
-    - Swagger UI (/docs) - Interface interativa
-    - ReDoc (/redoc) - Documentação detalhada
+    ### 📖 Documentation
+    - Swagger UI (/docs) - Interactive interface
+    - ReDoc (/redoc) - Detailed documentation
     """,
-    version="1.0.0",
+    version=settings.API_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
     contact={
@@ -90,51 +91,53 @@ app = FastAPI(
     },
 )
 
-# Configuração CORS
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especificar origins
+    allow_origins=["*"],  # In production, specify origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Instância global do serviço
+# Global service instance
 transcription_service = None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Inicializa serviços na startup"""
+    """Initialize services on startup"""
     global transcription_service
     try:
         transcription_service = TranscriptionService()
     except Exception as e:
-        print(f"Erro ao inicializar serviço de transcrição: {e}")
+        print(f"Error initializing transcription service: {e}")
 
 
 @app.get("/", response_model=dict)
 async def root():
-    """Endpoint raiz"""
+    """Root endpoint"""
     return {
-        "message": "Audio Transcriber API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "health": "/health"
+        "title": settings.API_TITLE,
+        "description": settings.API_DESCRIPTION,
+        "version": settings.API_VERSION,
+        "docs_url": "/docs",
+        "health_url": "/health",
+        "languages_url": "/languages"
     }
 
 
 @app.get("/health", 
          response_model=HealthResponse,
-         summary="Verificação de saúde da API",
-         description="Verifica o status da API e suas dependências")
+         summary="API health check",
+         description="Checks API status and its dependencies")
 async def health_check():
     """
-    ## Verificação de saúde da API
+    ## API Health Check
     
-    Endpoint para monitoramento que verifica se a API está funcionando corretamente.
+    Monitoring endpoint that checks if the API is working correctly.
     
-    ### Exemplo de resposta saudável:
+    ### Example of healthy response:
     ```json
     {
         "status": "healthy",
@@ -146,67 +149,67 @@ async def health_check():
     }
     ```
     
-    ### Status possíveis:
-    - **healthy**: API funcionando normalmente
-    - **unhealthy**: Problemas detectados (ex: API OpenAI indisponível)
+    ### Possible statuses:
+    - **healthy**: API working normally
+    - **unhealthy**: Problems detected (e.g., OpenAI API unavailable)
     
-    ### Códigos de resposta:
-    - **200**: Verificação realizada (status pode ser healthy ou unhealthy)
+    ### Response codes:
+    - **200**: Check performed (status can be healthy or unhealthy)
     """
     try:
-        # Testa se pode criar instância do transcriber
+        # Test if transcriber instance can be created
         test_transcriber = AudioTranscriber()
         openai_available = test_transcriber.client is not None
         
         return HealthResponse(
             status="healthy",
-            version="1.0.0",
+            version=settings.API_VERSION,
             timestamp=datetime.now(),
             openai_api_available=openai_available,
             supported_formats=list(AudioTranscriber.SUPPORTED_FORMATS),
-            max_file_size_mb=25
+            max_file_size_mb=settings.MAX_FILE_SIZE_MB
         )
     except Exception as e:
         return HealthResponse(
             status="unhealthy",
-            version="1.0.0",
+            version=settings.API_VERSION,
             timestamp=datetime.now(),
             openai_api_available=False,
             supported_formats=list(AudioTranscriber.SUPPORTED_FORMATS),
-            max_file_size_mb=25
+            max_file_size_mb=settings.MAX_FILE_SIZE_MB
         )
 
 
 @app.get("/languages",
-         summary="Listar idiomas suportados",
-         description="Lista todos os códigos de idioma aceitos pela API")
+         summary="List supported languages",
+         description="Lists all language codes accepted by the API")
 async def get_supported_languages():
     """
-    ## Lista de idiomas suportados
+    ## List of supported languages
     
-    Retorna todos os códigos de idioma ISO-639-1 aceitos pela API Whisper da OpenAI.
+    Returns all ISO-639-1 language codes accepted by OpenAI's Whisper API.
     
-    ### Exemplo de resposta:
+    ### Example response:
     ```json
     {
         "supported_languages": {
-            "pt": "Português",
+            "pt": "Portuguese",
             "en": "English",
-            "es": "Español"
+            "es": "Spanish"
         },
         "total_languages": 97,
-        "note": "Use os códigos de 2 letras (ex: 'pt') no parâmetro language"
+        "note": "Use 2-letter codes (e.g., 'pt') in the language parameter"
     }
     ```
     """
-    # Lista de idiomas suportados pelo Whisper (principais)
+    # List of languages supported by Whisper (main ones)
     languages = {
-        "pt": "Português",
+        "pt": "Portuguese",
         "en": "English", 
-        "es": "Español",
-        "fr": "Français",
-        "de": "Deutsch",
-        "it": "Italiano",
+        "es": "Spanish",
+        "fr": "French",
+        "de": "German",
+        "it": "Italian",
         "ja": "日本語",
         "ko": "한국어",
         "zh": "中文",
@@ -287,7 +290,7 @@ async def get_supported_languages():
     return {
         "supported_languages": languages,
         "total_languages": len(languages),
-        "note": "Use os códigos de 2 letras (ex: 'pt') no parâmetro language",
+        "note": "Use 2-letter codes (e.g., 'pt') in the language parameter",
         "format": "ISO-639-1",
         "examples": {
             "portuguese": "pt",
@@ -301,30 +304,30 @@ async def get_supported_languages():
 
 @app.post("/transcribe", 
           response_model=TranscriptionResponse,
-          summary="Transcrever arquivo único",
-          description="Transcreve um único arquivo de áudio e retorna o resultado em JSON")
+          summary="Transcribe single file",
+          description="Transcribes a single audio file and returns the result in the specified format")
 async def transcribe_audio(
-    file: UploadFile = File(description="Arquivo de áudio para transcrever"),
+    file: UploadFile = File(description="Audio file to transcribe"),
     output_format: str = Form(
         default="json", 
-        description="Formato de saída: json, txt, xlsx, csv"
+        description="Output format: json, txt, xlsx, csv"
     ),
     max_file_size_mb: Optional[int] = Form(
         default=25, 
-        description="Tamanho máximo do arquivo em MB (1-100)",
+        description="Maximum file size in MB (1-100)",
         ge=1, le=100
     ),
     language: Optional[str] = Form(
         default=None, 
-        description="Idioma do áudio em formato ISO-639-1 (ex: 'pt', 'en', 'es')"
+        description="Audio language in ISO-639-1 format (e.g., 'pt', 'en', 'es')"
     ),
 ):
     """
-    ## Transcreve um único arquivo de áudio
+    ## Transcribes a single audio file
     
-    Realiza a transcrição de um arquivo de áudio usando o modelo Whisper da OpenAI.
+    Performs audio transcription using OpenAI's Whisper model.
     
-    ### Exemplo de uso com cURL:
+    ### Example usage with cURL:
     ```bash
     curl -X POST "http://localhost:8000/transcribe" \
          -H "Content-Type: multipart/form-data" \
@@ -333,11 +336,11 @@ async def transcribe_audio(
          -F "language=pt"
     ```
     
-    ### Exemplo de resposta:
+    ### Example response:
     ```json
     {
         "success": true,
-        "transcription": "Olá, este é um exemplo de transcrição.",
+        "transcription": "Hello, this is an example transcription.",
         "filename": "audio.mp3",
         "file_size_mb": 2.5,
         "processing_time_seconds": 1.5,
@@ -348,50 +351,50 @@ async def transcribe_audio(
     }
     ```
     
-    ### Códigos de resposta:
-    - **200**: Transcrição realizada com sucesso
-    - **400**: Arquivo inválido ou parâmetros incorretos
-    - **413**: Arquivo muito grande
-    - **500**: Erro interno do servidor
+    ### Response codes:
+    - **200**: Transcription completed successfully
+    - **400**: Invalid file or incorrect parameters
+    - **413**: File too large
+    - **500**: Internal server error
     """
     if not transcription_service:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Serviço de transcrição não disponível"
+            detail="Transcription service not available"
         )
     
-    # Validações
+    # Validations
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nome do arquivo é obrigatório"
+            detail="Filename is required"
         )
     
     file_extension = Path(file.filename).suffix.lower()
     if file_extension not in AudioTranscriber.SUPPORTED_FORMATS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Formato não suportado. Formatos aceitos: {', '.join(AudioTranscriber.SUPPORTED_FORMATS)}"
+            detail=f"Unsupported format. Accepted formats: {', '.join(AudioTranscriber.SUPPORTED_FORMATS)}"
         )
     
-    # Lê conteúdo do arquivo
+    # Read file content
     try:
         file_content = await file.read()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Erro ao ler arquivo: {str(e)}"
+            detail=f"Error reading file: {str(e)}"
         )
     
-    # Verifica tamanho
+    # Check size
     file_size_mb = len(file_content) / (1024 * 1024)
     if file_size_mb > max_file_size_mb:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Arquivo muito grande. Máximo: {max_file_size_mb}MB"
+            detail=f"File too large. Maximum: {max_file_size_mb}MB"
         )
     
-    # Processa transcrição
+    # Process transcription
     try:
         result = await transcription_service.transcribe_single_file(
             file_content=file_content,
@@ -403,36 +406,36 @@ async def transcribe_audio(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro na transcrição: {str(e)}"
+            detail=f"Transcription error: {str(e)}"
         )
 
 
 @app.post("/transcribe/batch", 
           response_model=BatchTranscriptionResponse,
-          summary="Transcrever múltiplos arquivos",
-          description="Transcreve múltiplos arquivos de áudio em lote")
+          summary="Transcribe multiple files",
+          description="Transcribes multiple audio files in batch")
 async def transcribe_batch(
-    files: List[UploadFile] = File(description="Lista de arquivos de áudio para transcrever"),
+    files: List[UploadFile] = File(description="List of audio files to transcribe"),
     output_format: str = Form(
         default="xlsx", 
-        description="Formato de saída: json, txt, xlsx, csv"
+        description="Output format: json, txt, xlsx, csv"
     ),
     max_file_size_mb: Optional[int] = Form(
         default=25, 
-        description="Tamanho máximo por arquivo em MB (1-100)",
+        description="Maximum size per file in MB (1-100)",
         ge=1, le=100
     ),
     language: Optional[str] = Form(
         default=None, 
-        description="Idioma dos áudios em formato ISO-639-1 (ex: 'pt', 'en', 'es')"
+        description="Audio language in ISO-639-1 format (e.g., 'pt', 'en', 'es')"
     ),
 ):
     """
-    ## Transcreve múltiplos arquivos de áudio em lote
+    ## Transcribes multiple audio files in batch
     
-    Processa vários arquivos de áudio simultaneamente e retorna os resultados consolidados.
+    Processes multiple audio files simultaneously and returns consolidated results.
     
-    ### Exemplo de uso com cURL:
+    ### Example usage with cURL:
     ```bash
     curl -X POST "http://localhost:8000/transcribe/batch" \
          -H "Content-Type: multipart/form-data" \
@@ -442,7 +445,7 @@ async def transcribe_batch(
          -F "language=pt"
     ```
     
-    ### Exemplo de resposta:
+    ### Example response:
     ```json
     {
         "success": true,
@@ -452,7 +455,7 @@ async def transcribe_batch(
         "results": [
             {
                 "success": true,
-                "transcription": "Primeira transcrição...",
+                "transcription": "First transcription...",
                 "filename": "audio1.mp3",
                 "file_size_mb": 1.2,
                 "processing_time_seconds": 0.8,
@@ -468,24 +471,24 @@ async def transcribe_batch(
     }
     ```
     
-    ### Códigos de resposta:
-    - **200**: Processamento concluído (pode haver falhas individuais)
-    - **400**: Nenhum arquivo válido fornecido
-    - **500**: Erro interno do servidor
+    ### Response codes:
+    - **200**: Processing completed (may have individual failures)
+    - **400**: No valid files provided
+    - **500**: Internal server error
     """
     if not transcription_service:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Serviço de transcrição não disponível"
+            detail="Transcription service not available"
         )
     
     if not files:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Pelo menos um arquivo é obrigatório"
+            detail="At least one file is required"
         )
     
-    # Valida e processa arquivos
+    # Validate and process files
     file_data = []
     for file in files:
         if not file.filename:
@@ -507,10 +510,10 @@ async def transcribe_batch(
     if not file_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nenhum arquivo válido para processar"
+            detail="No valid files to process"
         )
     
-    # Processa lote
+    # Process batch
     try:
         result = await transcription_service.transcribe_batch(
             files=file_data,
@@ -521,77 +524,77 @@ async def transcribe_batch(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro no processamento em lote: {str(e)}"
+            detail=f"Batch processing error: {str(e)}"
         )
 
 
 @app.post("/transcribe/download",
-          summary="Transcrever e baixar resultado",
-          description="Transcreve arquivos e retorna o resultado para download direto")
+          summary="Transcribe and download result",
+          description="Transcribes files and returns the result for direct download")
 async def transcribe_and_download(
-    files: List[UploadFile] = File(description="Arquivo(s) de áudio para transcrever"),
+    files: List[UploadFile] = File(description="Audio file(s) to transcribe"),
     output_format: str = Form(
         default="xlsx",
-        description="Formato do arquivo de saída: json, txt, xlsx, csv"
+        description="Output file format: json, txt, xlsx, csv"
     ),
     max_file_size_mb: Optional[int] = Form(
         default=25,
-        description="Tamanho máximo por arquivo em MB (1-100)",
+        description="Maximum size per file in MB (1-100)",
         ge=1, le=100
     ),
     language: Optional[str] = Form(
         default=None,
-        description="Idioma dos áudios em formato ISO-639-1 (ex: 'pt', 'en', 'es')"
+        description="Audio language in ISO-639-1 format (e.g., 'pt', 'en', 'es')"
     ),
 ):
     """
-    ## Transcreve arquivos e retorna resultado para download
+    ## Transcribes files and returns result for download
     
-    Processa um ou múltiplos arquivos de áudio e retorna o resultado formatado para download direto.
+    Processes one or multiple audio files and returns the formatted result for direct download.
     
-    ### Exemplo de uso com cURL:
+    ### Example usage with cURL:
     ```bash
-    # Para arquivo único com saída Excel
+    # For single file with Excel output
     curl -X POST "http://localhost:8000/transcribe/download" \
          -H "Content-Type: multipart/form-data" \
          -F "files=@audio.mp3" \
          -F "output_format=xlsx" \
          -F "language=pt" \
-         --output transcricao.xlsx
+         --output transcription.xlsx
     
-    # Para múltiplos arquivos com saída CSV
+    # For multiple files with CSV output
     curl -X POST "http://localhost:8000/transcribe/download" \
          -H "Content-Type: multipart/form-data" \
          -F "files=@audio1.mp3" \
          -F "files=@audio2.wav" \
          -F "output_format=csv" \
          -F "language=pt" \
-         --output transcricoes.csv
+         --output transcriptions.csv
     ```
     
-    ### Formatos de resposta:
-    - **xlsx**: Planilha Excel com dados estruturados
-    - **csv**: Arquivo CSV com dados tabulares
-    - **txt**: Arquivo de texto com transcrições
-    - **json**: Resposta JSON estruturada
+    ### Response formats:
+    - **xlsx**: Excel spreadsheet with structured data
+    - **csv**: CSV file with tabular data
+    - **txt**: Text file with transcriptions
+    - **json**: Structured JSON response
     
-    ### Headers de resposta:
-    - `Content-Type`: Tipo MIME apropriado ao formato
-    - `Content-Disposition`: Nome do arquivo para download
+    ### Response headers:
+    - `Content-Type`: MIME type appropriate to the format
+    - `Content-Disposition`: Filename for download
     
-    ### Códigos de resposta:
-    - **200**: Download pronto com dados da transcrição
-    - **400**: Arquivo inválido ou parâmetros incorretos
-    - **413**: Arquivo muito grande
-    - **500**: Erro interno do servidor
+    ### Response codes:
+    - **200**: Download ready with transcription data
+    - **400**: Invalid file or incorrect parameters
+    - **413**: File too large
+    - **500**: Internal server error
     """
     if not transcription_service:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Serviço de transcrição não disponível"
+            detail="Transcription service not available"
         )
     
-    # Se apenas um arquivo, trata como single
+    # If only one file, treat as single
     if len(files) == 1:
         file = files[0]
         file_content = await file.read()
@@ -603,7 +606,7 @@ async def transcribe_and_download(
             language=language
         )
     else:
-        # Múltiplos arquivos
+        # Multiple files
         file_data = []
         for file in files:
             if file.filename:
@@ -616,7 +619,7 @@ async def transcribe_and_download(
             language=language
         )
     
-    # Formata saída
+    # Format output
     try:
         formatted_output = transcription_service.format_output(result, output_format)
         
@@ -627,12 +630,12 @@ async def transcribe_and_download(
             return Response(
                 content=formatted_output,
                 media_type="text/plain",
-                headers={"Content-Disposition": "attachment; filename=transcricao.txt"}
+                headers={"Content-Disposition": "attachment; filename=transcription.txt"}
             )
         
         elif output_format in ["xlsx", "csv"]:
             media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" if output_format == "xlsx" else "text/csv"
-            filename = f"transcricao.{output_format}"
+            filename = f"transcription.{output_format}"
             
             return Response(
                 content=formatted_output,
@@ -643,16 +646,16 @@ async def transcribe_and_download(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao formatar saída: {str(e)}"
+            detail=f"Output formatting error: {str(e)}"
         )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    """Handler global para exceções"""
+    """Global exception handler"""
     error_response = ErrorResponse(
         error="InternalServerError",
-        message="Erro interno do servidor",
+        message="Internal server error",
         details=str(exc),
         timestamp=datetime.now(),
         request_id=str(uuid.uuid4())
@@ -664,15 +667,31 @@ async def global_exception_handler(request, exc):
     )
 
 
-# Função para executar localmente
-def run_local(host: str = "0.0.0.0", port: int = 8000, reload: bool = True):
-    """Executa a API localmente"""
+# Function to run locally
+def run_local(
+    host: Optional[str] = None, 
+    port: Optional[int] = None, 
+    reload: Optional[bool] = None,
+    workers: Optional[int] = None
+):
+    """Runs the API locally using .env configurations as defaults"""
+    
+    # Use .env configurations as defaults
+    final_host = host or settings.SERVER_HOST
+    final_port = port or settings.SERVER_PORT
+    final_reload = reload if reload is not None else settings.SERVER_RELOAD
+    final_workers = workers or settings.SERVER_WORKERS
+    
+    # Print server information
+    settings.print_server_info()
+    
     uvicorn.run(
         "audio_transcriber.api.main:app",
-        host=host,
-        port=port,
-        reload=reload,
-        log_level="info"
+        host=final_host,
+        port=final_port,
+        reload=final_reload,
+        workers=final_workers if not final_reload else 1,  # Multiple workers only in production
+        log_level=settings.LOG_LEVEL.lower()
     )
 
 

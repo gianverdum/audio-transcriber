@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "audio-transcriber"
 version = "1.0.0"
-description = "Ferramenta para transcrição de áudios usando OpenAI API, gerando planilhas Excel organizadas"
+description = "Tool for audio transcription using OpenAI API, generating organized Excel spreadsheets"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"

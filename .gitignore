@@ -1,4 +1,4 @@
-# Arquivos Python
+# Python files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,7 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Ambientes virtuais
+# Virtual environments
 .env
 .venv
 env/
@@ -29,16 +29,16 @@ ENV/
 env.bak/
 venv.bak/
 
-# Arquivos de configuração
+# Configuration files
 .env
 config.ini
 
-# Arquivos de saída
+# Output files
 *.xlsx
 *.xls
 transcricoes_*.xlsx
 
-# Pastas de teste
+# Test folders
 audios/
 output/
 
@@ -51,6 +51,6 @@ output/
 *.swp
 *.swo
 
-# Sistema
+# System
 .DS_Store
 Thumbs.db

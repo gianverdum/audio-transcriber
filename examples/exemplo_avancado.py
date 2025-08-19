@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Exemplo avançado de uso da ferramenta de transcrição
-Demonstra uso programático com configurações customizadas
+Advanced usage example of the transcription tool
+Demonstrates programmatic use with custom configurations
 """
 
 import os
@@ -11,16 +11,16 @@ from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente do arquivo .env
+ # Load environment variables from .env file
 load_dotenv()
 
-# Adiciona o diretório src ao path para importação
+ # Add the src directory to the path for import
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from audio_transcriber import AudioTranscriber
 
-def configurar_logging():
-    """Configura logging customizado"""
+def setup_logging():
+    """Setup custom logging"""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -30,139 +30,139 @@ def configurar_logging():
         ]
     )
 
-def exemplo_avancado():
-    """Exemplo com uso mais avançado da ferramenta"""
+def advanced_example():
+    """Example with more advanced usage of the tool"""
     
-    print("🎵 Audio Transcriber - Exemplo Avançado")
+    print("🎵 Audio Transcriber - Advanced Example")
     print("=" * 45)
     
-    # Configura logging
-    configurar_logging()
+    # Setup logging
+    setup_logging()
     logger = logging.getLogger(__name__)
     
     try:
-        # Configurações (agora vêm do arquivo .env)
+        # Configurations (now come from the .env file)
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
-            print("⚠️  Configure OPENAI_API_KEY no arquivo .env antes de continuar")
-            print("💡 Copie .env.example para .env e configure suas credenciais")
+            print("⚠️  Please configure OPENAI_API_KEY in the .env file before continuing")
+            print("💡 Copy .env.example to .env and set your credentials")
             return
         
-        # Cria o transcriber com configurações customizadas
+        # Create the transcriber with custom configurations
         transcriber = AudioTranscriber(
-            # Configurações opcionais podem sobrescrever as do .env
-            max_file_size_mb=30,  # Exemplo: arquivo maior que o padrão
-            api_delay=1.0,        # Exemplo: pausa maior entre requisições
-            save_logs=True        # Salva logs em arquivo
+            # Optional configurations can override those in .env
+            max_file_size_mb=30,  # Example: larger file than default
+            api_delay=1.0,        # Example: longer pause between requests
+            save_logs=True        # Save logs to file
         )
         
-        # Define pastas
-        pasta_audios = "./audios"
-        pasta_saida = "./output"
+        # Set folders
+        audio_folder = "./audios"
+        output_folder = "./output"
         
-        # Cria pastas se não existirem
-        Path(pasta_audios).mkdir(exist_ok=True)
-        Path(pasta_saida).mkdir(exist_ok=True)
+        # Create folders if they don't exist
+        Path(audio_folder).mkdir(exist_ok=True)
+        Path(output_folder).mkdir(exist_ok=True)
         
-        # Verifica se há arquivos
-        audio_files = transcriber.find_audio_files(pasta_audios)
+        # Check for files
+        audio_files = transcriber.find_audio_files(audio_folder)
         if not audio_files:
-            print(f"❌ Nenhum arquivo de áudio encontrado em {pasta_audios}")
-            print("Coloque alguns arquivos de áudio na pasta e tente novamente.")
+            print(f"❌ No audio files found in {audio_folder}")
+            print("Put some audio files in the folder and try again.")
             return
         
-        print(f"📁 Encontrados {len(audio_files)} arquivos de áudio")
+        print(f"📁 Found {len(audio_files)} audio files")
         
-        # Lista os arquivos encontrados
-        print("\n📋 Arquivos que serão processados:")
+        # List found files
+        print("\n📋 Files to be processed:")
         for i, file_path in enumerate(audio_files, 1):
             file_info = transcriber.get_file_info(file_path)
-            print(f"  {i:2d}. {file_info['nome_arquivo']} ({file_info['tamanho_mb']} MB)")
+            print(f"  {i:2d}. {file_info['file_name']} ({file_info['size_mb']} MB)")
         
-        # Confirma processamento
-        resposta = input("\n🤔 Continuar com a transcrição? (s/N): ").strip().lower()
-        if resposta not in ['s', 'sim', 'y', 'yes']:
-            print("⏹️  Processamento cancelado")
+        # Confirm processing
+        answer = input("\n🤔 Continue with transcription? (y/N): ").strip().lower()
+        if answer not in ['y', 'yes', 's', 'sim']:
+            print("⏹️  Processing cancelled")
             return
         
-        # Nome do arquivo de saída
+        # Output file name
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_file = Path(pasta_saida) / f"transcricoes_avancado_{timestamp}.xlsx"
+        output_file = Path(output_folder) / f"advanced_transcriptions_{timestamp}.xlsx"
         
-        # Processa com medição de tempo
-        inicio = datetime.now()
-        print(f"\n🚀 Iniciando processamento às {inicio.strftime('%H:%M:%S')}")
+        # Process with timing
+        start = datetime.now()
+        print(f"\n🚀 Starting processing at {start.strftime('%H:%M:%S')}")
         
-        excel_file = transcriber.process_folder(pasta_audios, str(output_file))
+        excel_file = transcriber.process_folder(audio_folder, str(output_file))
         
-        fim = datetime.now()
-        duracao = fim - inicio
+        end = datetime.now()
+        duration = end - start
         
-        # Relatório final
-        print(f"\n🎉 Processamento concluído!")
-        print(f"⏱️  Tempo total: {duracao}")
-        print(f"📊 Planilha Excel: {excel_file}")
+        # Final report
+        print(f"\n🎉 Processing complete!")
+        print(f"⏱️  Total time: {duration}")
+        print(f"📊 Excel spreadsheet: {excel_file}")
         
-        # Estatísticas dos resultados
+        # Results statistics
         if transcriber.results:
-            sucessos = len([r for r in transcriber.results if r['sucesso'] == 'Sim'])
-            falhas = len(transcriber.results) - sucessos
-            taxa_sucesso = (sucessos / len(transcriber.results)) * 100
+            successes = len([r for r in transcriber.results if r.get('success', '').lower() in ['yes', 'sim']])
+            failures = len(transcriber.results) - successes
+            success_rate = (successes / len(transcriber.results)) * 100
             
-            print(f"\n📈 Estatísticas:")
-            print(f"   Sucessos: {sucessos}")
-            print(f"   Falhas: {falhas}")
-            print(f"   Taxa de sucesso: {taxa_sucesso:.1f}%")
+            print(f"\n📈 Statistics:")
+            print(f"   Successes: {successes}")
+            print(f"   Failures: {failures}")
+            print(f"   Success rate: {success_rate:.1f}%")
             
-            if falhas > 0:
-                print(f"\n❌ Arquivos com falha:")
-                for resultado in transcriber.results:
-                    if resultado['sucesso'] == 'Não':
-                        print(f"   - {resultado['nome_arquivo']}: {resultado['erro']}")
+            if failures > 0:
+                print(f"\n❌ Failed files:")
+                for result in transcriber.results:
+                    if result.get('success', '').lower() in ['no', 'não']:
+                        print(f"   - {result.get('file_name', 'unknown')}: {result.get('error', 'unknown error')}")
         
-        logger.info("Processamento avançado concluído com sucesso")
+        logger.info("Advanced processing completed successfully")
         
     except KeyboardInterrupt:
-        print("\n⚠️  Processamento interrompido pelo usuário")
+        print("\n⚠️  Processing interrupted by user")
     except Exception as e:
-        logger.error(f"Erro no exemplo avançado: {e}")
-        print(f"❌ Erro: {e}")
+        logger.error(f"Error in advanced example: {e}")
+        print(f"❌ Error: {e}")
 
-def exemplo_processamento_lote():
-    """Exemplo de processamento de múltiplas pastas"""
+def batch_processing_example():
+    """Example of processing multiple folders"""
     
-    print("\n🗂️  Exemplo: Processamento em Lote")
+    print("\n🗂️  Example: Batch Processing")
     print("=" * 40)
     
-    pastas_audio = [
-        "./audios/reuniao1",
-        "./audios/reuniao2", 
-        "./audios/entrevistas"
+    audio_folders = [
+        "./audios/meeting1",
+        "./audios/meeting2", 
+        "./audios/interviews"
     ]
     
     try:
         transcriber = AudioTranscriber()
         
-        for pasta in pastas_audio:
-            if Path(pasta).exists():
-                print(f"\n📁 Processando: {pasta}")
+        for folder in audio_folders:
+            if Path(folder).exists():
+                print(f"\n📁 Processing: {folder}")
                 
-                nome_pasta = Path(pasta).name
+                folder_name = Path(folder).name
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                output_file = f"transcricoes_{nome_pasta}_{timestamp}.xlsx"
+                output_file = f"transcriptions_{folder_name}_{timestamp}.xlsx"
                 
-                excel_file = transcriber.process_folder(pasta, output_file)
-                print(f"✅ Concluído: {excel_file}")
+                excel_file = transcriber.process_folder(folder, output_file)
+                print(f"✅ Done: {excel_file}")
             else:
-                print(f"⚠️  Pasta não encontrada: {pasta}")
+                print(f"⚠️  Folder not found: {folder}")
                 
     except Exception as e:
-        print(f"❌ Erro no processamento em lote: {e}")
+        print(f"❌ Error in batch processing: {e}")
 
 if __name__ == "__main__":
-    exemplo_avancado()
+    advanced_example()
     
-    # Pergunta se quer executar exemplo de lote
-    resposta = input("\n🤔 Executar exemplo de processamento em lote? (s/N): ").strip().lower()
-    if resposta in ['s', 'sim', 'y', 'yes']:
-        exemplo_processamento_lote()
+    # Ask if want to run batch example
+    answer = input("\n🤔 Run batch processing example? (y/N): ").strip().lower()
+    if answer in ['y', 'yes', 's', 'sim']:
+        batch_processing_example()

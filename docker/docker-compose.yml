@@ -13,7 +13,7 @@ services:
       - LOG_LEVEL=INFO
       - MAX_FILE_SIZE_MB=25
     volumes:
-      # Volume para logs (opcional)
+      # Volume for logs (optional)
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
@@ -23,7 +23,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Nginx para proxy reverso (opcional, para produção)
+  # Nginx for reverse proxy (optional, for production)
   nginx:
     image: nginx:alpine
     container_name: audio-transcriber-nginx

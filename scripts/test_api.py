@@ -1,39 +1,39 @@
 #!/usr/bin/env python3
 """
-Script para testar a API do Audio Transcriber
+Script to test the Audio Transcriber API
 """
 
-import requests
+import requests # type: ignore[import]
 import json
 import sys
 from pathlib import Path
 import time
 
-def testar_api_local(base_url="http://127.0.0.1:8000"):
-    """Testa a API executando localmente"""
+def test_local_api(base_url="http://127.0.0.1:8000"):
+    """Tests the API running locally"""
     
-    print("🧪 Testando Audio Transcriber API")
+    print("🧪 Testing Audio Transcriber API")
     print("=" * 40)
     print(f"🌐 Base URL: {base_url}")
     
-    # Testa endpoint raiz
-    print("\n1. Testando endpoint raiz...")
+    # Test root endpoint
+    print("\n1. Testing root endpoint...")
     try:
         response = requests.get(f"{base_url}/")
         if response.status_code == 200:
-            print("✅ Endpoint raiz OK")
+            print("✅ Root endpoint OK")
             print(f"   Response: {response.json()}")
         else:
-            print(f"❌ Endpoint raiz falhou: {response.status_code}")
+            print(f"❌ Root endpoint failed: {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Erro ao conectar: {e}")
-        print("💡 Certifique-se de que o servidor está rodando:")
+        print(f"❌ Connection error: {e}")
+        print("💡 Make sure the server is running:")
         print("   uv run python -m audio_transcriber.cli server")
         return False
     
-    # Testa health check
-    print("\n2. Testando health check...")
+    # Test health check
+    print("\n2. Testing health check...")
     try:
         response = requests.get(f"{base_url}/health")
         if response.status_code == 200:
@@ -41,118 +41,118 @@ def testar_api_local(base_url="http://127.0.0.1:8000"):
             print("✅ Health check OK")
             print(f"   Status: {health_data['status']}")
             print(f"   OpenAI API: {'✅' if health_data['openai_api_available'] else '❌'}")
-            print(f"   Formatos suportados: {len(health_data['supported_formats'])}")
+            print(f"   Supported formats: {len(health_data['supported_formats'])}")
         else:
-            print(f"❌ Health check falhou: {response.status_code}")
+            print(f"❌ Health check failed: {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ Erro no health check: {e}")
+        print(f"❌ Health check error: {e}")
         return False
     
-    # Testa documentação
-    print("\n3. Testando documentação...")
+    # Test documentation
+    print("\n3. Testing documentation...")
     try:
         response = requests.get(f"{base_url}/docs")
         if response.status_code == 200:
-            print("✅ Documentação disponível")
+            print("✅ Documentation available")
             print(f"   URL: {base_url}/docs")
         else:
-            print(f"⚠️  Documentação não acessível: {response.status_code}")
+            print(f"⚠️  Documentation not accessible: {response.status_code}")
     except Exception as e:
-        print(f"⚠️  Erro ao acessar documentação: {e}")
+        print(f"⚠️  Error accessing documentation: {e}")
     
-    # Testa endpoint de transcrição (sem arquivo)
-    print("\n4. Testando endpoint de transcrição (validação)...")
+    # Test transcription endpoint (no file)
+    print("\n4. Testing transcription endpoint (validation)...")
     try:
         response = requests.post(f"{base_url}/transcribe")
-        if response.status_code == 422:  # Validation error esperado
-            print("✅ Validação de entrada funcionando")
+        if response.status_code == 422:  # Expected validation error
+            print("✅ Input validation working")
         else:
-            print(f"⚠️  Resposta inesperada: {response.status_code}")
+            print(f"⚠️  Unexpected response: {response.status_code}")
     except Exception as e:
-        print(f"❌ Erro no teste de validação: {e}")
+        print(f"❌ Validation test error: {e}")
     
-    print("\n🎉 Testes básicos da API concluídos!")
-    print(f"📖 Acesse a documentação: {base_url}/docs")
-    print(f"🏥 Monitoramento: {base_url}/health")
+    print("\n🎉 Basic API tests completed!")
+    print(f"📖 Access documentation: {base_url}/docs")
+    print(f"🏥 Monitoring: {base_url}/health")
     
     return True
 
-def testar_com_arquivo_exemplo():
-    """Testa API com arquivo de exemplo (se disponível)"""
+def test_with_example_file():
+    """Tests API with example audio file (if available)"""
     
-    print("\n🎵 Teste com arquivo de áudio")
+    print("\n🎵 Test with audio file")
     print("=" * 40)
     
-    # Procura por arquivos de áudio de exemplo
-    exemplos = []
-    for pasta in ["./audios", "./examples/audios", "../audios"]:
-        pasta_path = Path(pasta)
-        if pasta_path.exists():
+    # Search for example audio files
+    examples = []
+    for folder in ["./audios", "./examples/audios", "../audios"]:
+        folder_path = Path(folder)
+        if folder_path.exists():
             for ext in ['.mp3', '.wav', '.ogg', '.m4a']:
-                exemplos.extend(list(pasta_path.glob(f"*{ext}")))
+                examples.extend(list(folder_path.glob(f"*{ext}")))
     
-    if not exemplos:
-        print("⚠️  Nenhum arquivo de áudio encontrado para teste")
-        print("💡 Coloque um arquivo de áudio em ./audios/ para testar")
+    if not examples:
+        print("⚠️  No audio file found for testing")
+        print("💡 Place an audio file in ./audios/ to test")
         return
     
-    arquivo_exemplo = exemplos[0]
-    print(f"📁 Usando arquivo: {arquivo_exemplo}")
+    example_file = examples[0]
+    print(f"📁 Using file: {example_file}")
     
     base_url = "http://127.0.0.1:8000"
     
     try:
-        with open(arquivo_exemplo, 'rb') as f:
-            files = {'file': (arquivo_exemplo.name, f, 'audio/mpeg')}
+        with open(example_file, 'rb') as f:
+            files = {'file': (example_file.name, f, 'audio/mpeg')}
             data = {'output_format': 'json'}
             
-            print("🚀 Enviando arquivo para transcrição...")
+            print("🚀 Sending file for transcription...")
             start_time = time.time()
             
             response = requests.post(
                 f"{base_url}/transcribe",
                 files=files,
                 data=data,
-                timeout=300  # 5 minutos
+                timeout=300  # 5 minutes
             )
             
             duration = time.time() - start_time
             
             if response.status_code == 200:
                 result = response.json()
-                print("✅ Transcrição bem-sucedida!")
-                print(f"   Arquivo: {result['filename']}")
-                print(f"   Sucesso: {result['success']}")
-                print(f"   Tempo: {duration:.2f}s")
+                print("✅ Transcription successful!")
+                print(f"   File: {result['filename']}")
+                print(f"   Success: {result['success']}")
+                print(f"   Time: {duration:.2f}s")
                 if result['success']:
-                    print(f"   Transcrição: {result['transcription'][:100]}...")
+                    print(f"   Transcription: {result['transcription'][:100]}...")
                 else:
-                    print(f"   Erro: {result['error']}")
+                    print(f"   Error: {result['error']}")
             else:
-                print(f"❌ Erro na transcrição: {response.status_code}")
+                print(f"❌ Transcription error: {response.status_code}")
                 print(f"   Response: {response.text}")
                 
     except Exception as e:
-        print(f"❌ Erro no teste com arquivo: {e}")
+        print(f"❌ Error in file test: {e}")
 
 def main():
-    """Função principal do teste"""
+    """Main test function"""
     
     if len(sys.argv) > 1:
         base_url = sys.argv[1]
     else:
         base_url = "http://127.0.0.1:8000"
     
-    # Testes básicos
-    if testar_api_local(base_url):
-        # Pergunta se quer testar com arquivo
+    # Basic tests
+    if test_local_api(base_url):
+        # Ask if want to test with file
         try:
-            resposta = input("\n🤔 Testar com arquivo de áudio? (s/N): ").strip().lower()
-            if resposta in ['s', 'sim', 'y', 'yes']:
-                testar_com_arquivo_exemplo()
+            answer = input("\n🤔 Test with audio file? (y/N): ").strip().lower()
+            if answer in ['s', 'sim', 'y', 'yes']:
+                test_with_example_file()
         except KeyboardInterrupt:
-            print("\n👋 Teste finalizado")
+            print("\n👋 Test finished")
 
 if __name__ == "__main__":
     main()

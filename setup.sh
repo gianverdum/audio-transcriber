@@ -1,39 +1,39 @@
 #!/bin/bash
 
-# Script de instalação para Audio Transcriber
-# Execute: chmod +x setup.sh && ./setup.sh
+# Installation script for Audio Transcriber
+# Run: chmod +x setup.sh && ./setup.sh
 
-echo "🚀 Configurando Audio Transcriber..."
+echo "🚀 Setting up Audio Transcriber..."
 echo "=================================="
 
-# Verifica se Python está instalado
+# Check if Python is installed
 if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 não encontrado. Instale o Python 3 primeiro."
+    echo "❌ Python 3 not found. Please install Python 3 first."
     exit 1
 fi
 
-echo "✅ Python 3 encontrado: $(python3 --version)"
+echo "✅ Python 3 found: $(python3 --version)"
 
-# Verifica se pip está instalado
+# Check if pip is installed
 if ! command -v pip3 &> /dev/null && ! command -v pip &> /dev/null; then
-    echo "❌ pip não encontrado. Instale o pip primeiro."
+    echo "❌ pip not found. Please install pip first."
     exit 1
 fi
 
-echo "✅ pip encontrado"
+echo "✅ pip found"
 
-# Cria ambiente virtual (opcional)
-read -p "🤔 Deseja criar um ambiente virtual? (s/N): " create_venv
-if [[ $create_venv =~ ^[Ss]$ ]]; then
-    echo "📦 Criando ambiente virtual..."
+# Create virtual environment (optional)
+read -p "🤔 Do you want to create a virtual environment? (y/N): " create_venv
+if [[ $create_venv =~ ^[Yy]$ ]]; then
+    echo "📦 Creating virtual environment..."
     python3 -m venv venv
     source venv/bin/activate
-    echo "✅ Ambiente virtual ativado"
-    echo "💡 Para ativar novamente: source venv/bin/activate"
+    echo "✅ Virtual environment activated"
+    echo "💡 To activate again: source venv/bin/activate"
 fi
 
-# Instala dependências
-echo "📥 Instalando dependências..."
+# Install dependencies
+echo "📥 Installing dependencies..."
 if command -v pip3 &> /dev/null; then
     pip3 install -r requirements.txt
 else
@@ -41,66 +41,66 @@ else
 fi
 
 if [ $? -eq 0 ]; then
-    echo "✅ Dependências instaladas com sucesso"
+    echo "✅ Dependencies installed successfully"
 else
-    echo "❌ Erro ao instalar dependências"
+    echo "❌ Error installing dependencies"
     exit 1
 fi
 
-# Cria pastas necessárias
-echo "📁 Criando estrutura de pastas..."
+# Create necessary folders
+echo "📁 Creating folder structure..."
 mkdir -p audios output
-echo "✅ Pastas criadas: audios/ e output/"
+echo "✅ Folders created: audios/ and output/"
 
-# Solicita chave da OpenAI
+# Request OpenAI key
 echo ""
-echo "🔑 Configuração da OpenAI"
+echo "🔑 OpenAI Configuration"
 echo "========================"
-echo "Você precisa de uma chave da API OpenAI."
-echo "Obtenha em: https://platform.openai.com/account/api-keys"
+echo "You need an OpenAI API key."
+echo "Get it at: https://platform.openai.com/account/api-keys"
 echo ""
 
-read -p "Digite sua chave da OpenAI (ou pressione Enter para configurar depois): " openai_key
+read -p "Enter your OpenAI key (or press Enter to configure later): " openai_key
 
 if [ ! -z "$openai_key" ]; then
-    # Adiciona ao bashrc/zshrc
+    # Add to bashrc/zshrc
     if [ -f ~/.bashrc ]; then
         echo "export OPENAI_API_KEY=\"$openai_key\"" >> ~/.bashrc
-        echo "✅ Chave adicionada ao ~/.bashrc"
+        echo "✅ Key added to ~/.bashrc"
     fi
     
     if [ -f ~/.zshrc ]; then
         echo "export OPENAI_API_KEY=\"$openai_key\"" >> ~/.zshrc
-        echo "✅ Chave adicionada ao ~/.zshrc"
+        echo "✅ Key added to ~/.zshrc"
     fi
     
-    # Define para a sessão atual
+    # Set for current session
     export OPENAI_API_KEY="$openai_key"
-    echo "✅ Chave configurada para a sessão atual"
+    echo "✅ Key configured for current session"
 else
-    echo "⚠️  Configure a chave depois:"
-    echo "   export OPENAI_API_KEY=\"sua_chave_aqui\""
+    echo "⚠️  Configure the key later:"
+    echo "   export OPENAI_API_KEY=\"your_key_here\""
 fi
 
-# Executa teste de configuração
+# Run configuration test
 echo ""
-echo "🧪 Executando teste de configuração..."
+echo "🧪 Running configuration test..."
 python3 test_setup.py
 
 echo ""
-echo "🎉 Instalação concluída!"
+echo "🎉 Installation complete!"
 echo "======================="
 echo ""
-echo "📖 Próximos passos:"
-echo "1. Coloque seus arquivos de áudio na pasta 'audios/'"
-echo "2. Execute: python3 exemplo_uso.py"
-echo "3. Ou use: python3 audio_transcriber.py audios/"
+echo "📖 Next steps:"
+echo "1. Put your audio files in the 'audios/' folder"
+echo "2. Run: python3 example_usage.py"
+echo "3. Or use: python3 audio_transcriber.py audios/"
 echo ""
-echo "📚 Veja o README.md para mais informações"
+echo "📚 See README.md for more information"
 
-# Se criou ambiente virtual, lembra de ativá-lo
-if [[ $create_venv =~ ^[Ss]$ ]]; then
+# If virtual environment was created, remind to activate
+if [[ $create_venv =~ ^[Yy]$ ]]; then
     echo ""
-    echo "💡 Lembre-se de ativar o ambiente virtual:"
+    echo "💡 Remember to activate the virtual environment:"
     echo "   source venv/bin/activate"
 fi

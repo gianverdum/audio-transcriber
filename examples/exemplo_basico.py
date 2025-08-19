@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Exemplo de uso simples da ferramenta de transcrição
+Simple usage example of the transcription tool
 """
 
 import os
@@ -8,56 +8,56 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente do arquivo .env
+ # Load environment variables from .env file
 load_dotenv()
 
-# Adiciona o diretório src ao path para importação
+ # Add the src directory to the path for import
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from audio_transcriber import AudioTranscriber
 
-def exemplo_uso():
-    """Exemplo básico de como usar a ferramenta"""
+def example_usage():
+    """Basic example of how to use the tool"""
     
-    print("🎵 Audio Transcriber - Exemplo de Uso")
+    print("🎵 Audio Transcriber - Usage Example")
     print("=" * 40)
     
-    # As variáveis de ambiente são carregadas automaticamente do arquivo .env
-    # Você também pode definir diretamente no código (não recomendado para produção)
-    # api_key = "sua_chave_aqui"
+    # Environment variables are automatically loaded from the .env file
+    # You can also set them directly in the code (not recommended for production)
+    # api_key = "your_key_here"
     
     try:
-        # Cria o transcriber (usando arquivo .env)
+        # Create the transcriber (using .env file)
         transcriber = AudioTranscriber()
         
-        # Opção com chave direta:
+        # Option with direct key:
         # transcriber = AudioTranscriber(api_key=api_key)
         
-        # Define a pasta com os áudios
-        pasta_audios = input("Digite o caminho da pasta com os áudios: ").strip()
+        # Set the folder with audios
+        audio_folder = input("Enter the path to the folder with audio files: ").strip()
         
-        if not pasta_audios:
-            pasta_audios = "./audios"  # pasta padrão
+        if not audio_folder:
+            audio_folder = "./audios"  # default folder
         
-        # Processa os áudios
-        print(f"\n🎵 Iniciando transcrição dos áudios em: {pasta_audios}")
-        print("⏳ Aguarde, isso pode levar alguns minutos...")
+        # Process the audios
+        print(f"\n🎵 Starting transcription of audios in: {audio_folder}")
+        print("⏳ Please wait, this may take a few minutes...")
         
-        excel_file = transcriber.process_folder(pasta_audios)
+        excel_file = transcriber.process_folder(audio_folder)
         
-        print(f"\n✅ Concluído!")
-        print(f"📊 Planilha Excel criada: {excel_file}")
-        print("\nA planilha contém:")
-        print("- Aba 'Transcricoes': todas as transcrições detalhadas")
-        print("- Aba 'Resumo': estatísticas do processamento")
+        print(f"\n✅ Done!")
+        print(f"📊 Excel spreadsheet created: {excel_file}")
+        print("\nThe spreadsheet contains:")
+        print("- 'Transcriptions' sheet: all detailed transcriptions")
+        print("- 'Summary' sheet: processing statistics")
         
     except Exception as e:
-        print(f"❌ Erro: {e}")
-        print("\nDicas:")
-        print("1. Verifique se o arquivo .env está configurado (copie de .env.example)")
-        print("2. Confirme se a chave da OpenAI está no arquivo .env")
-        print("3. Confirme se a pasta de áudios existe")
-        print("4. Certifique-se de que há arquivos de áudio na pasta")
+        print(f"❌ Error: {e}")
+        print("\nTips:")
+        print("1. Check if the .env file is configured (copy from .env.example)")
+        print("2. Confirm the OpenAI key is in the .env file")
+        print("3. Confirm the audio folder exists")
+        print("4. Make sure there are audio files in the folder")
 
 if __name__ == "__main__":
-    exemplo_uso()
+    example_usage()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Script utilitário para configuração inicial do Audio Transcriber
-Ajuda a criar e configurar o arquivo .env
+Utility script for initial Audio Transcriber setup
+Helps create and configure the .env file
 """
 
 import os
@@ -9,164 +9,164 @@ import sys
 from pathlib import Path
 import shutil
 
-def criar_arquivo_env():
-    """Cria arquivo .env baseado no .env.example"""
+def create_env_file():
+    """Creates .env file based on .env.example"""
     
     projeto_dir = Path(__file__).parent.parent
     env_example = projeto_dir / ".env.example"
     env_file = projeto_dir / ".env"
     
-    print("🔧 Configuração do Audio Transcriber")
+    print("🔧 Audio Transcriber Setup")
     print("=" * 40)
     
-    # Verifica se .env.example existe
+    # Check if .env.example exists
     if not env_example.exists():
-        print("❌ Arquivo .env.example não encontrado")
+        print("❌ .env.example file not found")
         return False
     
-    # Verifica se .env já existe
+    # Check if .env already exists
     if env_file.exists():
-        print("⚠️  Arquivo .env já existe")
-        sobrescrever = input("Deseja sobrescrever? (s/N): ").strip().lower()
-        if sobrescrever not in ['s', 'sim', 'y', 'yes']:
-            print("⏹️  Operação cancelada")
+        print("⚠️  .env file already exists")
+        overwrite = input("Overwrite? (y/N): ").strip().lower()
+        if overwrite not in ['s', 'sim', 'y', 'yes']:
+            print("⏹️  Operation cancelled")
             return False
     
-    # Copia .env.example para .env
+    # Copy .env.example to .env
     try:
         shutil.copy2(env_example, env_file)
-        print(f"✅ Arquivo .env criado em: {env_file}")
+        print(f"✅ .env file created at: {env_file}")
     except Exception as e:
-        print(f"❌ Erro ao criar .env: {e}")
+        print(f"❌ Error creating .env: {e}")
         return False
     
     return True
 
-def configurar_chave_openai():
-    """Ajuda a configurar a chave da OpenAI"""
+def configure_openai_key():
+    """Helps configure the OpenAI key"""
     
     projeto_dir = Path(__file__).parent.parent
     env_file = projeto_dir / ".env"
     
     if not env_file.exists():
-        print("❌ Arquivo .env não encontrado. Execute a criação primeiro.")
+        print("❌ .env file not found. Run creation first.")
         return False
     
-    print("\n🔑 Configuração da Chave OpenAI")
+    print("\n🔑 OpenAI Key Setup")
     print("=" * 40)
-    print("🌐 Obtenha sua chave em: https://platform.openai.com/account/api-keys")
+    print("🌐 Get your key at: https://platform.openai.com/account/api-keys")
     print()
     
-    # Solicita a chave
-    chave = input("Cole sua chave da OpenAI aqui: ").strip()
+    # Request the key
+    key = input("Paste your OpenAI key here: ").strip()
     
-    if not chave:
-        print("⚠️  Nenhuma chave fornecida")
+    if not key:
+        print("⚠️  No key provided")
         return False
     
-    # Valida formato básico
-    if not chave.startswith('sk-'):
-        print("⚠️  A chave da OpenAI geralmente começa com 'sk-'")
-        continuar = input("Continuar mesmo assim? (s/N): ").strip().lower()
-        if continuar not in ['s', 'sim', 'y', 'yes']:
+    # Basic format validation
+    if not key.startswith('sk-'):
+        print("⚠️  OpenAI keys usually start with 'sk-'")
+        proceed = input("Continue anyway? (y/N): ").strip().lower()
+        if proceed not in ['s', 'sim', 'y', 'yes']:
             return False
     
-    # Lê o arquivo .env atual
+    # Read current .env file
     try:
         with open(env_file, 'r', encoding='utf-8') as f:
-            linhas = f.readlines()
+            lines = f.readlines()
     except Exception as e:
-        print(f"❌ Erro ao ler .env: {e}")
+        print(f"❌ Error reading .env: {e}")
         return False
     
-    # Atualiza a linha da chave
-    for i, linha in enumerate(linhas):
-        if linha.startswith('OPENAI_API_KEY='):
-            linhas[i] = f'OPENAI_API_KEY={chave}\n'
+    # Update the key line
+    for i, line in enumerate(lines):
+        if line.startswith('OPENAI_API_KEY='):
+            lines[i] = f'OPENAI_API_KEY={key}\n'
             break
     
-    # Salva o arquivo atualizado
+    # Save updated file
     try:
         with open(env_file, 'w', encoding='utf-8') as f:
-            f.writelines(linhas)
-        print("✅ Chave da OpenAI configurada com sucesso!")
+            f.writelines(lines)
+        print("✅ OpenAI key configured successfully!")
         return True
     except Exception as e:
-        print(f"❌ Erro ao salvar .env: {e}")
+        print(f"❌ Error saving .env: {e}")
         return False
 
-def verificar_configuracao():
-    """Verifica se a configuração está correta"""
+def check_configuration():
+    """Checks if the configuration is correct"""
     
-    print("\n🧪 Verificando Configuração")
+    print("\n🧪 Checking Configuration")
     print("=" * 40)
     
     projeto_dir = Path(__file__).parent.parent
     env_file = projeto_dir / ".env"
     
-    # Verifica se .env existe
+    # Check if .env exists
     if not env_file.exists():
-        print("❌ Arquivo .env não encontrado")
+        print("❌ .env file not found")
         return False
     
-    print("✅ Arquivo .env encontrado")
+    print("✅ .env file found")
     
-    # Carrega e verifica a chave
+    # Load and check the key
     try:
-        from dotenv import load_dotenv
+        from dotenv import load_dotenv # type: ignore[import]
         load_dotenv(env_file)
         
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
-            print("❌ OPENAI_API_KEY não encontrada no .env")
+            print("❌ OPENAI_API_KEY not found in .env")
             return False
         
-        if api_key == 'sk-proj-sua_chave_openai_aqui':
-            print("❌ Chave da OpenAI não foi configurada (ainda está o valor exemplo)")
+        if api_key == 'sk-proj-your_openai_key_here':
+            print("❌ OpenAI key not configured (still example value)")
             return False
         
-        print("✅ Chave da OpenAI configurada")
-        print(f"   Chave: {api_key[:20]}...{api_key[-8:] if len(api_key) > 28 else api_key}")
+        print("✅ OpenAI key configured")
+        print(f"   Key: {api_key[:20]}...{api_key[-8:] if len(api_key) > 28 else api_key}")
         
         return True
         
     except ImportError:
-        print("⚠️  python-dotenv não instalado")
+        print("⚠️  python-dotenv not installed")
         return False
     except Exception as e:
-        print(f"❌ Erro ao verificar configuração: {e}")
+        print(f"❌ Error checking configuration: {e}")
         return False
 
 def main():
-    """Função principal do script de configuração"""
+    """Main function for setup script"""
     
-    print("🚀 Audio Transcriber - Configuração Inicial")
+    print("🚀 Audio Transcriber - Initial Setup")
     print("=" * 50)
     
-    # Menu de opções
+    # Options menu
     while True:
-        print("\nOpções:")
-        print("1. Criar arquivo .env")
-        print("2. Configurar chave OpenAI")
-        print("3. Verificar configuração")
-        print("4. Sair")
+        print("\nOptions:")
+        print("1. Create .env file")
+        print("2. Configure OpenAI key")
+        print("3. Check configuration")
+        print("4. Exit")
         
-        opcao = input("\nEscolha uma opção (1-4): ").strip()
+        choice = input("\nChoose an option (1-4): ").strip()
         
-        if opcao == '1':
-            criar_arquivo_env()
-        elif opcao == '2':
-            configurar_chave_openai()
-        elif opcao == '3':
-            if verificar_configuracao():
-                print("\n🎉 Configuração completa! Você pode usar o Audio Transcriber.")
+        if choice == '1':
+            create_env_file()
+        elif choice == '2':
+            configure_openai_key()
+        elif choice == '3':
+            if check_configuration():
+                print("\n🎉 Setup complete! You can use Audio Transcriber.")
             else:
-                print("\n⚠️  Configuração incompleta. Complete os passos acima.")
-        elif opcao == '4':
-            print("👋 Até logo!")
+                print("\n⚠️  Incomplete setup. Complete the steps above.")
+        elif choice == '4':
+            print("👋 Goodbye!")
             break
         else:
-            print("❌ Opção inválida")
+            print("❌ Invalid option")
 
 if __name__ == "__main__":
     main()

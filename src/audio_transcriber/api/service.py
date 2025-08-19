@@ -1,6 +1,6 @@
 """
-Serviço de transcrição para API
-Abstrai a lógica de transcrição para uso em diferentes contextos
+API's transcription service
+Abstracts the transcription logic for use in different contexts
 """
 
 import io
@@ -16,15 +16,15 @@ from .models import TranscriptionResponse, BatchTranscriptionResponse
 
 
 class TranscriptionService:
-    """Serviço de transcrição para API"""
-    
+    """API's transcription service"""
+
     def __init__(self, api_key: Optional[str] = None, **config):
         """
-        Inicializa o serviço de transcrição
-        
+        Initializes the transcription service
+
         Args:
-            api_key: Chave da API OpenAI
-            **config: Configurações adicionais
+            api_key: OpenAI API key
+            **config: Additional configurations
         """
         self.transcriber = AudioTranscriber(api_key=api_key, **config)
         
@@ -37,48 +37,48 @@ class TranscriptionService:
         **options
     ) -> TranscriptionResponse:
         """
-        Transcreve um único arquivo
-        
+        Transcribes a single file
+
         Args:
-            file_content: Conteúdo do arquivo de áudio
-            filename: Nome do arquivo
-            output_format: Formato de saída
-            **options: Opções adicionais
-            
+            file_content: Audio file content
+            filename: Name of the file
+            output_format: Output format
+            **options: Additional options
+
         Returns:
-            Resposta da transcrição
+            Transcription response
         """
         start_time = time.time()
         
         try:
-            # Salva arquivo temporário
+            # Saves temporary file
             with tempfile.NamedTemporaryFile(
                 suffix=Path(filename).suffix,
                 delete=False
             ) as temp_file:
                 temp_file.write(file_content)
                 temp_path = Path(temp_file.name)
-            
-            # Obtém informações do arquivo
+
+            # Gets file information
             file_info = self.transcriber.get_file_info(temp_path)
-            
-            # Transcreve
+
+            # Transcribes
             transcription, success, error = self.transcriber.transcribe_audio(
                 temp_path, 
                 language=language
             )
-            
-            # Calcula tempo de processamento
+
+            # Calculates processing time
             processing_time = time.time() - start_time
-            
-            # Limpa arquivo temporário
+
+            # Cleans up temporary file
             temp_path.unlink()
             
             return TranscriptionResponse(
                 success=success,
                 transcription=transcription if success else "",
                 filename=filename,
-                file_size_mb=file_info['tamanho_mb'],
+                file_size_mb=file_info['size_mb'],
                 processing_time_seconds=round(processing_time, 2),
                 timestamp=datetime.now(),
                 output_format=output_format,
@@ -105,15 +105,15 @@ class TranscriptionService:
         **options
     ) -> BatchTranscriptionResponse:
         """
-        Transcreve múltiplos arquivos
-        
+        Transcribes multiple files
+
         Args:
-            files: Lista de tuplas (conteúdo, nome_arquivo)
-            output_format: Formato de saída
-            **options: Opções adicionais
+            files: List of tuples (content, filename)
+            output_format: Output format
+            **options: Additional options
             
         Returns:
-            Resposta da transcrição em lote
+            Batch transcription response
         """
         start_time = time.time()
         results = []
@@ -146,14 +146,14 @@ class TranscriptionService:
         output_format: str
     ) -> Union[str, bytes, Dict]:
         """
-        Formata a saída conforme solicitado
-        
+        Formats the output as requested
+
         Args:
-            response: Resposta da transcrição
-            output_format: Formato desejado (json, txt, xlsx, csv)
-            
+            response: Transcription response
+            output_format: Desired format (json, txt, xlsx, csv)
+
         Returns:
-            Dados formatados
+            Formatted data
         """
         if output_format == "json":
             return response.model_dump()
@@ -162,81 +162,81 @@ class TranscriptionService:
             if isinstance(response, TranscriptionResponse):
                 return response.transcription
             else:
-                # Para lote, concatena todas as transcrições
+                # For batch, concatenate all transcriptions
                 texts = []
                 for result in response.results:
                     if result.success:
-                        texts.append(f"Arquivo: {result.filename}\n{result.transcription}\n")
+                        texts.append(f"File: {result.filename}\n{result.transcription}\n")
                 return "\n".join(texts)
         
         elif output_format in ["xlsx", "csv"]:
             return self._create_spreadsheet(response, output_format)
         
         else:
-            raise ValueError(f"Formato de saída não suportado: {output_format}")
-    
+            raise ValueError(f"Unsupported output format: {output_format}")
+
     def _create_spreadsheet(
         self,
         response: Union[TranscriptionResponse, BatchTranscriptionResponse],
         format_type: str
     ) -> bytes:
         """
-        Cria planilha Excel ou CSV
-        
+        Creates Excel or CSV spreadsheet
+
         Args:
-            response: Resposta da transcrição
-            format_type: 'xlsx' ou 'csv'
-            
+            response: Transcription response
+            format_type: 'xlsx' or 'csv'
+
         Returns:
-            Bytes da planilha
+            Bytes of the spreadsheet
         """
         if isinstance(response, TranscriptionResponse):
-            # Arquivo único
+            # Single file
             data = [{
-                'arquivo': response.filename,
-                'transcricao': response.transcription,
-                'sucesso': response.success,
-                'erro': response.error,
-                'tamanho_mb': response.file_size_mb,
-                'tempo_processamento_s': response.processing_time_seconds,
-                'data_processamento': response.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                'file': response.filename,
+                'transcription': response.transcription,
+                'success': response.success,
+                'error': response.error,
+                'size_mb': response.file_size_mb,
+                'processing_time_s': response.processing_time_seconds,
+                'processing_timestamp': response.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             }]
         else:
-            # Lote
+            # Batch
             data = []
             for i, result in enumerate(response.results, 1):
                 data.append({
                     'id': i,
-                    'arquivo': result.filename,
-                    'transcricao': result.transcription,
-                    'sucesso': result.success,
-                    'erro': result.error,
-                    'tamanho_mb': result.file_size_mb,
-                    'tempo_processamento_s': result.processing_time_seconds,
-                    'data_processamento': result.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    'file': result.filename,
+                    'transcription': result.transcription,
+                    'success': result.success,
+                    'error': result.error,
+                    'size_mb': result.file_size_mb,
+                    'processing_time_s': result.processing_time_seconds,
+                    'processing_timestamp': result.timestamp.strftime('%Y-%m-%d %H:%M:%S')
                 })
         
         df = pd.DataFrame(data)
-        
-        # Cria buffer em memória
+
+        # Create in-memory buffer
         buffer = io.BytesIO()
         
         if format_type == "xlsx":
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Transcricoes', index=False)
-                
-                # Adiciona resumo para lote
+                df.to_excel(writer, sheet_name='Transcriptions', index=False)
+
+                # Add summary for batch
                 if isinstance(response, BatchTranscriptionResponse):
                     summary_data = {
-                        'Métrica': [
-                            'Total de arquivos',
-                            'Transcrições bem-sucedidas',
-                            'Falhas',
-                            'Taxa de sucesso (%)',
-                            'Tempo total (s)',
-                            'Data do processamento'
+                        'MMetric': [
+                            'Total Files',
+                            'Successful Transcriptions',
+                            'Failures',
+                            'Success Rate (%)',
+                            'Total Time (s)',
+                            'Processing Timestamp'
                         ],
-                        'Valor': [
+                        'Value': [
                             response.total_files,
                             response.successful_transcriptions,
                             response.failed_transcriptions,

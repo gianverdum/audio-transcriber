@@ -1,166 +1,166 @@
 #!/usr/bin/env python3
 """
-Script de teste para verificar a instalação e configuração
+Test script to verify installation and configuration
 """
 
 import os
 import sys
 from pathlib import Path
 
-def verificar_dependencias():
-    """Verifica se todas as dependências estão instaladas"""
-    print("🔍 Verificando dependências...")
+def check_dependencies():
+    """Checks if all dependencies are installed"""
+    print("🔍 Checking dependencies...")
     
     try:
-        import openai
-        print("✅ OpenAI instalado")
+        import openai # type: ignore[import]
+        print("✅ OpenAI installed")
     except ImportError:
-        print("❌ OpenAI não encontrado. Execute: pip install openai")
+        print("❌ OpenAI not found. Run: pip install openai")
         return False
     
     try:
-        import pandas
-        print("✅ Pandas instalado")
+        import pandas # type: ignore[import]
+        print("✅ Pandas installed")
     except ImportError:
-        print("❌ Pandas não encontrado. Execute: pip install pandas")
+        print("❌ Pandas not found. Run: pip install pandas")
         return False
     
     try:
-        import openpyxl
-        print("✅ OpenPyXL instalado")
+        import openpyxl # type: ignore[import]
+        print("✅ OpenPyXL installed")
     except ImportError:
-        print("❌ OpenPyXL não encontrado. Execute: pip install openpyxl")
+        print("❌ OpenPyXL not found. Run: pip install openpyxl")
         return False
     
     return True
 
-def verificar_chave_openai():
-    """Verifica se a chave da OpenAI está configurada"""
-    print("\n🔑 Verificando chave da OpenAI...")
+def check_openai_key():
+    """Checks if the OpenAI key is configured"""
+    print("\n🔑 Checking OpenAI key...")
     
-    # Carrega .env primeiro
+    # Load .env first
     try:
-        from dotenv import load_dotenv
+        from dotenv import load_dotenv # type: ignore[import]
         load_dotenv()
     except ImportError:
-        print("⚠️  python-dotenv não instalado, tentando variável de ambiente direta")
+        print("⚠️  python-dotenv not installed, trying direct environment variable")
     
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        print("❌ Chave da OpenAI não encontrada")
-        print("Configure no arquivo .env ou como variável de ambiente")
-        print("Exemplo .env: OPENAI_API_KEY='sua_chave_aqui'")
+        print("❌ OpenAI key not found")
+        print("Configure it in the .env file or as an environment variable")
+        print("Example .env: OPENAI_API_KEY='your_key_here'")
         return False
     
     if api_key.startswith('sk-'):
-        print("✅ Chave da OpenAI configurada")
+        print("✅ OpenAI key configured")
         return True
     else:
-        print("⚠️  Formato da chave parece incorreto (deveria começar com 'sk-')")
+        print("⚠️  Key format seems incorrect (should start with 'sk-')")
         return False
 
-def verificar_estrutura_projeto():
-    """Verifica se os arquivos do projeto estão presentes"""
-    print("\n📁 Verificando estrutura do projeto...")
+def check_project_structure():
+    """Checks if the project files are present"""
+    print("\n📁 Checking project structure...")
     
-    arquivos_necessarios = [
+    required_files = [
         'src/audio_transcriber/__init__.py',
-        'src/audio_transcriber/transcriber.py',
+        'src/audio_transcriber/core/transcriber.py',
         'src/audio_transcriber/cli.py',
         'pyproject.toml',
         '.env.example',
         'README.md'
     ]
     
-    todos_presentes = True
-    for arquivo in arquivos_necessarios:
-        if Path(arquivo).exists():
-            print(f"✅ {arquivo}")
+    all_present = True
+    for file in required_files:
+        if Path(file).exists():
+            print(f"✅ {file}")
         else:
-            print(f"❌ {arquivo} não encontrado")
-            todos_presentes = False
+            print(f"❌ {file} not found")
+            all_present = False
     
-    return todos_presentes
+    return all_present
 
-def teste_importacao():
-    """Testa se o módulo principal pode ser importado"""
-    print("\n📦 Testando importação do módulo...")
+def test_import():
+    """Tests if the main module can be imported"""
+    print("\n📦 Testing module import...")
     
     try:
-        # Adiciona src ao path
+        # Add src to path
         import sys
         sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         
         from audio_transcriber import AudioTranscriber
-        print("✅ Módulo AudioTranscriber importado com sucesso")
+        print("✅ AudioTranscriber module imported successfully")
         return True
     except Exception as e:
-        print(f"❌ Erro ao importar: {e}")
+        print(f"❌ Error importing: {e}")
         return False
 
-def criar_pasta_teste():
-    """Cria uma pasta de exemplo para testes"""
-    print("\n📂 Criando estrutura de teste...")
+def create_test_folders():
+    """Creates example folders for testing"""
+    print("\n📂 Creating test structure...")
     
     try:
-        # Cria pastas de exemplo
+        # Create example folders
         Path("./audios").mkdir(exist_ok=True)
         Path("./output").mkdir(exist_ok=True)
         
-        print("✅ Pastas criadas:")
-        print("  - ./audios (coloque seus arquivos de áudio aqui)")
-        print("  - ./output (planilhas Excel serão salvas aqui)")
+        print("✅ Folders created:")
+        print("  - ./audios (put your audio files here)")
+        print("  - ./output (Excel spreadsheets will be saved here)")
         
         return True
     except Exception as e:
-        print(f"❌ Erro ao criar pastas: {e}")
+        print(f"❌ Error creating folders: {e}")
         return False
 
 def main():
-    """Função principal de teste"""
-    print("🧪 TESTE DE CONFIGURAÇÃO - Audio Transcriber")
+    """Main test function"""
+    print("🧪 CONFIGURATION TEST - Audio Transcriber")
     print("=" * 50)
     
-    # Lista de verificações
-    verificacoes = [
-        ("Dependências", verificar_dependencias),
-        ("Chave OpenAI", verificar_chave_openai),
-        ("Estrutura do projeto", verificar_estrutura_projeto),
-        ("Importação do módulo", teste_importacao),
-        ("Criação de pastas", criar_pasta_teste)
+    # List of checks
+    checks = [
+        ("Dependencies", check_dependencies),
+        ("OpenAI Key", check_openai_key),
+        ("Project Structure", check_project_structure),
+        ("Module Import", test_import),
+        ("Folder Creation", create_test_folders)
     ]
     
-    resultados = []
+    results = []
     
-    for nome, funcao in verificacoes:
-        resultado = funcao()
-        resultados.append((nome, resultado))
+    for name, func in checks:
+        result = func()
+        results.append((name, result))
     
-    # Resumo final
+    # Final summary
     print("\n" + "=" * 50)
-    print("📊 RESUMO DOS TESTES")
+    print("📊 TEST SUMMARY")
     print("=" * 50)
     
-    sucessos = 0
-    for nome, sucesso in resultados:
-        status = "✅ PASSOU" if sucesso else "❌ FALHOU"
-        print(f"{nome:.<30} {status}")
-        if sucesso:
-            sucessos += 1
+    successes = 0
+    for name, success in results:
+        status = "✅ PASSED" if success else "❌ FAILED"
+        print(f"{name:.<30} {status}")
+        if success:
+            successes += 1
     
     print("\n" + "=" * 50)
     
-    if sucessos == len(resultados):
-        print("🎉 TODOS OS TESTES PASSARAM!")
-        print("Sua instalação está pronta para uso.")
-        print("\nPara começar:")
-        print("1. Coloque seus áudios na pasta './audios'")
-        print("2. Execute: python exemplo_uso.py")
+    if successes == len(results):
+        print("🎉 ALL TESTS PASSED!")
+        print("Your installation is ready to use.")
+        print("\nTo get started:")
+        print("1. Put your audio files in the './audios' folder")
+        print("2. Run: python example_usage.py")
     else:
-        print(f"⚠️  {len(resultados) - sucessos} teste(s) falharam")
-        print("Corrija os problemas antes de usar a ferramenta.")
+        print(f"⚠️  {len(results) - successes} test(s) failed")
+        print("Fix the issues before using the tool.")
     
-    return 0 if sucessos == len(resultados) else 1
+    return 0 if successes == len(results) else 1
 
 if __name__ == "__main__":
     exit(main())

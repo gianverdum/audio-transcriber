@@ -1,141 +1,259 @@
 # 🎵 Audio Transcriber
 
-Ferramenta completa para transcrição automática de arquivos de áudio usando a API da OpenAI, disponível como:
+Complete tool for automatic audio file transcription using OpenAI API, available as:
 
-- **📱 CLI** - Interface de linha de comando
-- **🌐 API REST** - Servidor web com FastAPI  
-- **☁️ AWS Lambda** - Deploy serverless na nuvem
-- **🐳 Docker** - Container para desenvolvimento e produção
+- **📱 CLI** - Command line interface
+- **🌐 REST API** - Web server with FastAPI  
+- **☁️ AWS Lambda** - Serverless cloud deployment
+- **🐳 Docker** - Container for development and production
 
-## 📋 Características
+## 📋 Features
 
-- **Transcrição automática** usando o modelo Whisper da OpenAI
-- **Múltiplos formatos de entrada**: MP3, MP4, MPEG, MPGA, M4A, WAV, WebM, OGG, FLAC
-- **Múltiplos formatos de saída**: JSON, TXT, Excel (XLSX), CSV
-- **API REST completa** com documentação automática
-- **Suporte a processamento em lote**
-- **Deploy pronto para AWS Lambda**
-- **Container Docker** para fácil deployment
-- **Sistema de credenciais seguro** com arquivos .env
-- **Tratamento de erros robusto** e logging detalhado
+- **Automatic transcription** using OpenAI's Whisper model
+- **Multiple input formats**: MP3, MP4, MPEG, MPGA, M4A, WAV, WebM, OGG, FLAC
+- **Multiple output formats**: JSON, TXT, Excel (XLSX), CSV
+- **Complete REST API** with automatic documentation
+- **Batch processing support**
+- **AWS Lambda ready deployment**
+- **Docker container** for easy deployment
+- **Secure credentials system** with .env files
+- **Robust error handling** and detailed logging
 
-## 🚀 Instalação
+## 🚀 Installation
 
-### Pré-requisitos
+### Prerequisites
 
-Este projeto usa o **[uv](https://docs.astral.sh/uv/)** para gerenciamento de dependências Python. Se você ainda não tem o `uv` instalado:
+This project uses **[uv](https://docs.astral.sh/uv/)** for Python dependency management. If you don't have `uv` installed yet:
 
 ```bash
-# Instalar uv (Linux/macOS)
+# Install uv (Linux/macOS)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Instalar uv (Windows)
+# Install uv (Windows)
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Ou via pip
+# Or via pip
 pip install uv
 ```
 
-### Opção 1: Usando UV (Recomendado)
+### Option 1: Using UV (Recommended)
 
 ```bash
-# Clone o projeto
+# Clone the project
 git clone <repository_url>
 cd audio-transcriber
 
-# Sincroniza e instala todas as dependências
+# Sync and install all dependencies
 uv sync
-
-# Ou se preferir instalar o projeto em modo desenvolvimento
-uv pip install -e .
 ```
 
-### Opção 2: Usando pip tradicional
+### Option 2: Using traditional pip
 
 ```bash
-# Clone o projeto
+# Clone the project
 git clone <repository_url>
 cd audio-transcriber
 
-# Instala as dependências
+# Install dependencies
 pip install -e .
-
-# Ou instala dependências diretamente
-pip install openai pandas openpyxl
 ```
 
-### Configuração da API OpenAI
+### OpenAI API Configuration
 
-O Audio Transcriber usa arquivo `.env` para gerenciar credenciais de forma segura.
+Audio Transcriber uses `.env` file to manage credentials securely.
 
-**Passo 1: Criar arquivo de configuração**
+**Step 1: Create configuration file**
 ```bash
-# Copie o arquivo de exemplo
+# Copy the example file
 cp .env.example .env
 
-# Ou use o script utilitário
-python scripts/setup_env.py
+# Or use the utility script
+uv run python scripts/setup_env.py
 ```
 
-**Passo 2: Configurar sua chave da OpenAI**
-1. Obtenha sua chave em: https://platform.openai.com/account/api-keys
-2. Edite o arquivo `.env` e substitua `sua_chave_openai_aqui` pela sua chave real:
+**Step 2: Configure your credentials and preferences**
+1. Get your key at: https://platform.openai.com/account/api-keys
+2. Edit the `.env` file and configure:
    ```bash
-   OPENAI_API_KEY=sk-proj-sua_chave_real_aqui
+   # Required
+   OPENAI_API_KEY=sk-proj-your_real_key_here
+   
+   # Server configurations (optional)
+   SERVER_HOST=127.0.0.1
+   SERVER_PORT=8000
+   SERVER_RELOAD=false
+   
+   # Other configurations (optional)
+   MAX_FILE_SIZE_MB=25
+   LOG_LEVEL=INFO
    ```
 
-**Alternativa: Variável de ambiente**
+**Alternative: Environment variable**
 ```bash
-export OPENAI_API_KEY="sua_chave_openai_aqui"
+export OPENAI_API_KEY="your_openai_key_here"
 ```
 
-> **⚠️ Importante:** Nunca commite o arquivo `.env` no git. Ele já está incluído no `.gitignore`.
+> **⚠️ Important:** Never commit the `.env` file to git. It's already included in `.gitignore`.
 
-## 📖 Como Usar
+## ⚙️ Centralized Configuration
 
-### 1️⃣ CLI (Linha de Comando)
+Audio Transcriber uses a centralized configuration system through the `.env` file. All configurations have sensible defaults and can be customized as needed.
+
+### � Mandatory Configuration
+```bash
+# OpenAI API key (REQUIRED)
+OPENAI_API_KEY=sk-proj-your_real_key_here
+```
+
+### �📡 Server Configuration (optional)
+```bash
+# Server host (default: 127.0.0.1)
+SERVER_HOST=127.0.0.1
+
+# Server port (default: 8000)
+SERVER_PORT=8000
+
+# Number of workers (default: 1)
+SERVER_WORKERS=1
+
+# Auto-reload for development (default: false)
+SERVER_RELOAD=true
+```
+
+### 🎵 API Configurations
+```bash
+# API title (default: Audio Transcriber API)
+API_TITLE=My Transcription API
+
+# API version (default: 1.0.0)
+API_VERSION=2.0.0
+
+# API description
+API_DESCRIPTION=Custom API for audio transcription
+```
+
+### ⚙️ Processing Configurations
+```bash
+# Maximum file size in MB (default: 25)
+MAX_FILE_SIZE_MB=50
+
+# Timeout for OpenAI requests in seconds (default: 30)
+API_TIMEOUT=60
+
+# Delay between requests in seconds (default: 0.5)
+API_DELAY=1.0
+```
+
+### 📁 Directory Configurations
+```bash
+# Default folder for audio files (default: ./audios)
+DEFAULT_AUDIO_FOLDER=./my_audios
+
+# Default folder for output files (default: ./output)
+DEFAULT_OUTPUT_FOLDER=./results
+```
+
+### 🐛 Debug and Log Configurations
+```bash
+# Log level (default: INFO) - values: DEBUG, INFO, WARNING, ERROR
+LOG_LEVEL=DEBUG
+
+# Debug mode (default: false)
+DEBUG=true
+
+# Save logs to file (default: false)
+SAVE_LOGS=true
+```
+
+### 🔧 Testing and Verifying Configurations
+```bash
+# View all loaded configurations
+uv run python scripts/test_config.py
+
+# Test server with .env configurations
+uv run audio-transcriber server
+
+# CLI Temporary Override (always override .env)
+uv run audio-transcriber server --port 9000 --host 0.0.0.0 --reload
+
+# Verify if configuration is set correctly
+uv run python -c "from audio_transcriber.core.config import settings; print(f'Porta: {settings.SERVER_PORT}, Host: {settings.SERVER_HOST}')"
+```
+
+### 📋 Complete Configurations Table
+
+| Variable | Type | Default | Description |
+|----------|------|--------|-----------|
+| **MANDATORY** |
+| `OPENAI_API_KEY` | string | - | OpenAI API Key |
+| **SERVER** |
+| `SERVER_HOST` | string | `127.0.0.1` | Server Host |
+| `SERVER_PORT` | int | `8000` | Server Port |
+| `SERVER_WORKERS` | int | `1` | Number of Workers |
+| `SERVER_RELOAD` | bool | `false` | Auto-reload development |
+| **API** |
+| `API_TITLE` | string | `Audio Transcriber API` | API Title |
+| `API_VERSION` | string | `1.0.0` | API Version |
+| `API_DESCRIPTION` | string | `API perform...` | API Description |
+| **PROCESSING** |
+| `MAX_FILE_SIZE_MB` | int | `25` | Max File Size |
+| `API_TIMEOUT` | int | `30` | Timeout requests OpenAI |
+| `API_DELAY` | float | `0.5` | Delay between requests |
+| **DIRECTORIES** |
+| `DEFAULT_AUDIO_FOLDER` | string | `./audios` | Default audios folder |
+| `DEFAULT_OUTPUT_FOLDER` | string | `./output` | Default output folder |
+| **DEBUG** |
+| `LOG_LEVEL` | string | `INFO` | Log Level |
+| `DEBUG` | bool | `false` | Debug Mode |
+| `SAVE_LOGS` | bool | `false` | Save Logs in File |
+
+> **💡 Tip:** Values of type `bool` should be `true` or `false` (lower case). Commented values `#` use setup default.
+
+## 📖 How to Use
+
+### 1️⃣ CLI (Command Line)
 
 ```bash
-# Transcrição local (modo tradicional)
-uv run audio-transcriber transcribe /caminho/para/pasta/audios
-uv run audio-transcriber transcribe /caminho/para/pasta/audios -o minhas_transcricoes.xlsx
+# Local transcription (traditional mode)
+uv run audio-transcriber transcribe /path/to/audio/folder
+uv run audio-transcriber transcribe /path/to/audio/folder -o my_transcriptions.xlsx
 
-# Servidor API local
+# Local API server
 uv run audio-transcriber server
 uv run audio-transcriber server --host 0.0.0.0 --port 8000 --reload
 
-# Compatibilidade: funciona sem subcomando
-uv run audio-transcriber /caminho/para/pasta/audios -o resultado.xlsx
+# Compatibility: works without subcommand
+uv run audio-transcriber /path/to/audio/folder -o result.xlsx
 ```
 
-### 2️⃣ API REST
+### 2️⃣ REST API
 
 ```bash
-# Inicia servidor (recomendado)
+# Start server (recommended)
 uv run audio-transcriber server
 
-# Ou diretamente com uvicorn
+# Or directly with uvicorn
 uv run uvicorn audio_transcriber.api.main:app --reload
 ```
 
-**Endpoints disponíveis:**
-- `GET /` - Informações da API
+**Available endpoints:**
+- `GET /` - API information
 - `GET /health` - Health check
-- `GET /docs` - Documentação interativa (Swagger)
-- `POST /transcribe` - Transcrever arquivo único
-- `POST /transcribe/batch` - Transcrever múltiplos arquivos
-- `POST /transcribe/download` - Transcrever e baixar resultado
+- `GET /docs` - Interactive documentation (Swagger)
+- `POST /transcribe` - Transcribe single file
+- `POST /transcribe/batch` - Transcribe multiple files
+- `POST /transcribe/download` - Transcribe and download result
 
 ### 3️⃣ Docker
 
 ```bash
-# Build da imagem
+# Build image
 docker build -f docker/Dockerfile -t audio-transcriber .
 
-# Executar container
-docker run -p 8000:8000 -e OPENAI_API_KEY=sua_chave audio-transcriber
+# Execute container
+docker run -p 8000:8000 -e OPENAI_API_KEY=your_key_audio-transcriber
 
-# Ou usar docker-compose
+# Or use docker-compose
 cd docker
 docker-compose up
 ```
@@ -143,25 +261,25 @@ docker-compose up
 ### 4️⃣ AWS Lambda
 
 ```bash
-# Deploy usando SAM CLI
+# Deploy using SAM CLI
 cd aws
 ./deploy.sh
 
-# Ou manualmente
+# Or manually
 sam build
 sam deploy --guided
 ```
 
-### 5️⃣ Programaticamente
+### 5️⃣ Programatically
 
 ```python
-# Uso tradicional (local)
+# Standard use (local)
 from audio_transcriber import AudioTranscriber
 
 transcriber = AudioTranscriber()
-excel_file = transcriber.process_folder("/caminho/para/audios")
+excel_file = transcriber.process_folder("/path/to/audios")
 
-# Uso como serviço (API)
+# As a service (API)
 from audio_transcriber.api import TranscriptionService
 
 service = TranscriptionService()
@@ -172,36 +290,36 @@ result = await service.transcribe_single_file(
 )
 ```
 
-> **💡 Dica:** Para usar em scripts Python, execute com `uv run python meu_script.py` para garantir que o ambiente virtual correto seja usado.
+> **💡 Tip:** To use into Python scripts, execute with `uv run python my_script.py` to ensure that the correct virtual environment is in use.
 
-## 📊 Resultado
+## 📊 Results
 
-A ferramenta gera um arquivo Excel com duas abas:
+The tool generates an Excel file with two sheets:
 
-### Aba "Transcricoes"
-- **ID**: Numeração sequencial
-- **Nome do arquivo**: Nome original do áudio
-- **Transcrição**: Texto transcrito
-- **Sucesso**: Se a transcrição foi bem-sucedida
-- **Erro**: Detalhes de erro (se houver)
-- **Tamanho (MB)**: Tamanho do arquivo
-- **Tempo de processamento**: Tempo gasto na transcrição
-- **Data da transcrição**: Quando foi processado
-- **Data de modificação**: Data original do arquivo
-- **Caminho completo**: Localização do arquivo
+### "Transcricoes" Sheet
+- **ID**: Sequential numbering
+- **Filename**: Original audio name
+- **Transcription**: Transcribed text
+- **Success**: Whether transcription was successful
+- **Error**: Error details (if any)
+- **Size (MB)**: File size
+- **Processing time**: Time spent on transcription
+- **Transcription date**: When it was processed
+- **Modification date**: Original file date
+- **Full path**: File location
 
-### Aba "Resumo"
-- Total de arquivos processados
-- Transcrições bem-sucedidas
-- Número de falhas
-- Taxa de sucesso
-- Tamanho total processado
-- Tempo total de processamento
-- Data do processamento
+### "Summary" Sheet
+- Total files processed
+- Successful transcriptions
+- Number of failures
+- Success rate
+- Total size processed
+- Total processing time
+- Processing date
 
-## 🔧 Formatos Suportados
+## 🔧 Supported Formats
 
-A ferramenta suporta todos os formatos aceitos pela API da OpenAI:
+The tool supports all formats accepted by OpenAI API:
 
 - **MP3** (.mp3)
 - **MP4** (.mp4)
@@ -213,158 +331,178 @@ A ferramenta suporta todos os formatos aceitos pela API da OpenAI:
 - **OGG** (.ogg)
 - **FLAC** (.flac)
 
-## ⚠️ Limitações
+## ⚠️ Limitations
 
-- **Tamanho máximo**: 25MB por arquivo (limitação da OpenAI)
-- **Rate limiting**: Há uma pausa de 0.5s entre requisições para evitar sobrecarga
-- **Custo**: Cada transcrição consome créditos da sua conta OpenAI
+- **Maximum size**: 25MB per file (OpenAI limitation)
+- **Rate limiting**: There's a 0.5s pause between requests to avoid overload
+- **Cost**: Each transcription consumes credits from your OpenAI account
 
-## 🛠️ Estrutura do Projeto
+## 🛠️ Project Structure
 
 ```
 audio-transcriber/
 ├── src/
 │   └── audio_transcriber/
-│       ├── __init__.py           # Módulo principal
-│       ├── cli.py               # Interface linha de comando
-│       ├── core/                # Lógica principal
+│       ├── __init__.py           # Main module
+│       ├── cli.py               # Command line interface
+│       ├── core/                # Main logic
 │       │   ├── __init__.py
-│       │   └── transcriber.py   # Classe AudioTranscriber
+│       │   └── transcriber.py   # AudioTranscriber class
 │       └── api/                 # API REST
 │           ├── __init__.py
 │           ├── main.py          # FastAPI app
-│           ├── models.py        # Modelos Pydantic
-│           └── service.py       # Serviços de transcrição
-├── tests/                       # Testes unitários
-├── examples/                    # Exemplos de uso
-├── scripts/                     # Scripts utilitários
-│   ├── setup_env.py            # Configuração .env
-│   ├── test_env.py             # Teste de configuração
-│   ├── test_api.py             # Teste da API
-│   └── test_setup.py           # Verificação completa
-├── docker/                      # Configuração Docker
+│           ├── models.py        # Pydantic models
+│           └── service.py       # Transcription services
+├── tests/                       # Unit tests
+├── examples/                    # Usage examples
+├── scripts/                     # Utilitary scripts
+│   ├── setup_env.py            # .env configuration
+│   ├── test_env.py             # configuration test
+│   ├── test_api.py             # API test
+│   └── test_setup.py           # Full verification
+├── docker/                      # Docker configuration
 │   ├── Dockerfile
 │   └── docker-compose.yml
 ├── aws/                         # Deploy AWS Lambda
 │   ├── template.yaml           # SAM template
-│   ├── deploy.sh               # Script de deploy
+│   ├── deploy.sh               # Deploy script
 │   └── lambda_handler.py       # Handler Lambda
-├── .env.example                # Exemplo de configuração
-├── .env                       # Suas configurações (não commitar)
-├── pyproject.toml              # Configuração do projeto
-└── README.md                   # Este arquivo
+├── .env.example                # Configuration example
+├── .env                       # Your configuration (dot not commit)
+├── pyproject.toml              # Project configuration
+└── README.md                   # This file
 ```
 
-## 🧪 Testes e Desenvolvimento
+## 🧪 Tests & Development
 
 ```bash
-# Executar testes unitários
+# Execute unit tests
 uv run pytest
 
-# Teste de configuração
+# Configuration test
 uv run python scripts/test_env.py
 
-# Teste da API (servidor deve estar rodando)
+# API test (server should be running)
 uv run python scripts/test_api.py
 
-# Formatação de código
+# Code formatting
 uv run black src tests examples
 uv run isort src tests examples
 
-# Verificação de tipos
+# Types verification
 uv run mypy src
 
-# Todos os checks
+# All the checks
 uv run pytest && uv run black --check src && uv run isort --check src && uv run mypy src
 ```
 
-## � Deploy em Produção
+## � Production Deploy
 
 ### Docker
 ```bash
-# Build e push para registry
+# Build and push to registry
 docker build -f docker/Dockerfile -t seu-registry/audio-transcriber:latest .
 docker push seu-registry/audio-transcriber:latest
 
-# Deploy com docker-compose
+# Deploy with docker-compose
 cd docker
 docker-compose -f docker-compose.yml up -d
 ```
 
 ### AWS Lambda
 ```bash
-# Pré-requisitos: AWS CLI configurado e SAM CLI instalado
+# Pre-requirements: Configured AWS CLI & Installed SAM CLI
 cd aws
 ./deploy.sh
 
-# Ou deploy manual
+# Or manual deploy
 sam build
 sam deploy --guided --parameter-overrides OpenAIApiKey=sua_chave
 ```
 
-### Kubernetes (Helm)
-```bash
-# Em breve: charts Helm para Kubernetes
-```
-
-## 🔍 Exemplo de Uso
+## 🔍 Usage examples
 
 ```python
-# Exemplo completo
+ # Full example
+ # Execute with: uv run python my_script.py
 from audio_transcriber import AudioTranscriber
 
-# Configura o transcriber
+# Configure transcriber
 transcriber = AudioTranscriber()
 
-# Processa uma pasta com áudios
-pasta = "/home/usuario/meus_audios"
+# Process an audios folder
+folder = "/home/user/my_audios"
 excel_file = transcriber.process_folder(
-    folder_path=pasta,
-    output_file="transcricoes_reuniao.xlsx"
+    folder_path=folder,
+    output_file="transcriptions.xlsx"
 )
 
-print(f"Transcrições salvas em: {excel_file}")
+print(f"Transcriptions saved into: {excel_file}")
 ```
 
-## 📝 Log de Atividades
+> **💡 Tip:** To execute Python scripts that use Audio Transcriber, always use `uv run python my_script.py` to ensure that all dependencies are available.
 
-A ferramenta gera logs detalhados mostrando:
-- Arquivos encontrados
-- Progress do processamento
-- Sucessos e falhas
-- Tempo de processamento
-- Resumo final
+## 📝 Activities logs
 
-## 🆘 Solução de Problemas
+This tool generates detailed logs showing:
+- Files found
+- Process progress
+- Success & fails
+- Process time
+- Summary
 
-### Erro: "Chave da OpenAI não encontrada"
-- Configure a variável de ambiente `OPENAI_API_KEY`
-- Ou passe a chave como parâmetro
+## 🆘 Troubleshooting
 
-### Erro: "Pasta não encontrada"
-- Verifique se o caminho está correto
-- Use caminhos absolutos quando possível
+### Error: "OpenAI key not found"
+- Configure the environment variable `OPENAI_API_KEY`
+- Or pass the key as parameter
 
-### Erro: "Nenhum arquivo de áudio encontrado"
-- Confirme se há arquivos de áudio na pasta
-- Verifique se os formatos são suportados
+### Error: "Folder not found"
+- Check if the path is correct
+- Use absolute paths when possible
 
-### Erro: "Arquivo muito grande"
-- O arquivo excede 25MB (limite da OpenAI)
-- Considere comprimir ou dividir o arquivo
+### Error: "No audio files found"
+- Confirm there are audio files in the folder
+- Check if formats are supported
 
-## 💡 Dicas
+### Error: "File too large"
+- File exceeds 25MB (OpenAI limit)
+- Consider compressing or splitting the file
 
-1. **Organize seus áudios** em uma pasta específica
-2. **Use nomes descritivos** para os arquivos
-3. **Monitore os custos** da API OpenAI
-4. **Faça backup** das transcrições importantes
-5. **Teste com poucos arquivos** primeiro
+## 💡 Tips
 
-## 📄 Licença
+1. **Organize your audios** in a specific folder
+2. **Use descriptive names** for files
+3. **Monitor costs** of OpenAI API
+4. **Backup** important transcriptions
+5. **Test with few files** first
+6. **Use `uv run`** whenever executing Python commands
+7. **Configure .env** once and reuse configurations
+8. **Use SERVER_RELOAD=true** only in development
+9. **For production** configure SERVER_HOST=0.0.0.0 and use multiple workers
 
-Este projeto é fornecido como está, para uso educacional e profissional.
+### 🚀 Most Used Commands
+```bash
+# Check configurations
+uv run python scripts/test_config.py
+
+# Development server (with .env)
+uv run audio-transcriber server
+
+# Production server (temporary override)
+uv run audio-transcriber server --host 0.0.0.0 --port 80 --workers 4
+
+# Local transcription
+uv run audio-transcriber transcribe ./my_audios -o result.xlsx
+
+# Quick API test
+uv run python scripts/test_api.py
+```
+
+## 📄 License
+
+This project is provided as is, for educational and professional use.
 
 ---
 
-🔗 **Precisa de ajuda?** Verifique os logs de erro ou entre em contato!
+🔗 **Need help?** Check error logs or get in touch!

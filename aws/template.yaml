@@ -4,7 +4,7 @@ Description: Audio Transcriber Lambda API
 
 Globals:
   Function:
-    Timeout: 900  # 15 minutos (máximo para Lambda)
+    Timeout: 900  # 15 minutes (Lambda maximum)
     MemorySize: 1024
     Runtime: python3.11
     Environment:
@@ -39,21 +39,21 @@ Resources:
           OPENAI_API_KEY: !Ref OpenAIApiKey
           STAGE: !Ref Stage
       Events:
-        # API Gateway para todos os endpoints
+        # API Gateway for all endpoints
         ApiGateway:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
             RestApiId: !Ref AudioTranscriberApi
-        # Health check específico
+        # Specific health check
         HealthCheck:
           Type: Api
           Properties:
             Path: /health
             Method: GET
             RestApiId: !Ref AudioTranscriberApi
-      # Políticas IAM
+      # IAM Policies
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -74,7 +74,7 @@ Resources:
         AllowMethods: "'GET,POST,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
-      # Configurações de timeout
+      # Timeout configurations
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
       MethodSettings:
@@ -90,7 +90,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/audio-transcriber-${Stage}'
       RetentionInDays: 14
 
-  # S3 Bucket para arquivos temporários (opcional)
+  # S3 Bucket for temporary files (optional)
   TempFilesBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -99,7 +99,7 @@ Resources:
         Rules:
           - Id: DeleteTempFiles
             Status: Enabled
-            ExpirationInDays: 1  # Remove arquivos após 1 dia
+            ExpirationInDays: 1  # Remove files after 1 day
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true

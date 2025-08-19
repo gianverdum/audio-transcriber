@@ -1,5 +1,5 @@
 """
-Testes para o CLI do Audio Transcriber
+Tests for the Audio Transcriber CLI
 """
 
 import unittest
@@ -8,44 +8,44 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Adiciona o diretório src ao path para importação
+ # Add the src directory to the path for import
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from audio_transcriber.cli import main
 
 
 class TestCLI(unittest.TestCase):
-    """Testes para interface de linha de comando"""
+    """Tests for command line interface"""
     
     def setUp(self):
-        """Configuração antes de cada teste"""
+        """Setup before each test"""
         self.temp_dir = tempfile.mkdtemp()
         self.temp_path = Path(self.temp_dir)
         
     def tearDown(self):
-        """Limpeza após cada teste"""
+        """Cleanup after each test"""
         import shutil
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     @patch('sys.argv', ['cli.py', '--help'])
     def test_help_argument(self):
-        """Testa se o argumento de ajuda funciona"""
+        """Tests if the help argument works"""
         with self.assertRaises(SystemExit) as cm:
             main()
         self.assertEqual(cm.exception.code, 0)
     
-    @patch('sys.argv', ['cli.py', '/pasta/inexistente'])
+    @patch('sys.argv', ['cli.py', 'transcribe', '/nonexistent/folder'])
     @patch('audio_transcriber.cli.AudioTranscriber')
     def test_nonexistent_folder(self, mock_transcriber):
-        """Testa comportamento com pasta inexistente"""
+        """Tests behavior with nonexistent folder"""
         result = main()
         self.assertEqual(result, 1)
     
-    @patch('sys.argv', ['cli.py', '/tmp'])
+    @patch('sys.argv', ['cli.py', 'transcribe', '/tmp'])
     @patch('audio_transcriber.cli.AudioTranscriber')
     def test_basic_usage(self, mock_transcriber_class):
-        """Testa uso básico do CLI"""
-        # Configura mock
+        """Tests basic CLI usage"""
+        # Setup mock
         mock_transcriber = MagicMock()
         mock_transcriber_class.return_value = mock_transcriber
         mock_transcriber.process_folder.return_value = "test_output.xlsx"

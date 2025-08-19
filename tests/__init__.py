@@ -1,3 +1,3 @@
 """
-Arquivo de configuração para execução de testes
+Test configuration file
 """

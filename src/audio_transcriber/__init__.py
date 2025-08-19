@@ -1,6 +1,6 @@
 """
 Audio Transcriber Package
-Ferramenta para transcrição de áudios usando OpenAI API
+Tool for audio transcription using OpenAI API
 """
 
 __version__ = "1.0.0"
