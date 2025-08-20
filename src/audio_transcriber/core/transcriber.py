@@ -30,32 +30,36 @@ class AudioTranscriber:
         Initializes the transcriber
         
         Args:
-            api_key: OpenAI API key (if None, it looks in the environment variable)
-            **config: Additional configurations (max_file_size_mb, api_delay, etc.)
+            api_key: OpenAI API key (optional, will load from config)
+            **config: Additional configuration parameters
         """
-        # Default configuration values
+        from .config import settings
+        
+        # Load configuration from settings with override support
         self.config = {
-            'max_file_size_mb': int(os.getenv('MAX_FILE_SIZE_MB', 25)),
-            'api_delay': float(os.getenv('API_DELAY', 0.5)),
-            'api_timeout': int(os.getenv('API_TIMEOUT', 30)),
-            'log_level': os.getenv('LOG_LEVEL', 'INFO'),
-            'debug': os.getenv('DEBUG', 'false').lower() == 'true',
-            'save_logs': os.getenv('SAVE_LOGS', 'false').lower() == 'true',
+            'api_timeout': settings.API_TIMEOUT,
+            'api_delay': settings.API_DELAY,
+            'max_file_size_mb': settings.MAX_FILE_SIZE_MB,
+            'log_level': settings.LOG_LEVEL,
+            'save_logs': settings.SAVE_LOGS,
+            **config  # Allow overrides
         }
-        self.config.update(config)
-
-        # Sets API key
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
-        if not self.api_key:
+        
+        # Load API key from Docker secret, env var, or parameter
+        if api_key:
+            self.openai_api_key = api_key
+        else:
+            self.openai_api_key = settings.get_openai_key()
+        
+        if not self.openai_api_key:
             raise ValueError(
-                "OpenAI API key not found.\n"
-                "Set OPENAI_API_KEY in the .env file or pass it as a parameter.\n"
-                "See the .env.example file for instructions."
+                "OpenAI API key not found. Set OPENAI_API_KEY environment variable, "
+                "provide Docker secret, or pass api_key parameter."
             )
 
         # Initializes OpenAI client
         self.client = OpenAI(
-            api_key=self.api_key,
+            api_key=self.openai_api_key,
             timeout=self.config['api_timeout']
         )
         self.results = []

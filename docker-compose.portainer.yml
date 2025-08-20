@@ -1,0 +1,90 @@
+services:
+  # REST API Server (internal port 8000) -> https://audio-transcriber.api.<YOUR_DOMAIN>.com.br
+  audio-transcriber-api:
+    image: ghcr.io/gianverdum/audio-transcriber:latest
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8000
+      - LOG_LEVEL=INFO
+      - MAX_FILE_SIZE_MB=25
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTH_TOKEN=${AUTH_TOKEN:-}
+    command: ["uv", "run", "audio-transcriber", "server", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - traefik_public
+      - audio-transcriber-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.at_api.rule=Host(`audio-transcriber.api.<YOUR_DOMAIN>.com.br`)
+        - traefik.http.routers.at_api.entrypoints=websecure
+        - traefik.http.routers.at_api.tls=true
+        - traefik.http.routers.at_api.tls.certresolver=le
+        - traefik.http.services.at_api.loadbalancer.server.port=8000
+
+  # MCP HTTP Server (internal port 8003) -> https://audio-transcriber.mcp.<YOUR_DOMAIN>.com.br
+  audio-transcriber-mcp-http:
+    image: ghcr.io/gianverdum/audio-transcriber:latest
+    environment:
+      - LOG_LEVEL=INFO
+      - MAX_FILE_SIZE_MB=25
+      - MCP_SERVER_HOST=0.0.0.0
+      - MCP_SERVER_PORT=8003
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AUTH_TOKEN=${AUTH_TOKEN:-}
+    command: ["uv", "run", "audio-transcriber-mcp-http"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - traefik_public
+      - audio-transcriber-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.at_mcp.rule=Host(`audio-transcriber.mcp.<YOUR_DOMAIN>.com.br`)
+        - traefik.http.routers.at_mcp.entrypoints=websecure
+        - traefik.http.routers.at_mcp.tls=true
+        - traefik.http.routers.at_mcp.tls.certresolver=le
+        - traefik.http.services.at_mcp.loadbalancer.server.port=8003
+
+  # MCP STDIO (dev/local) - Disabled in the cluster (replicas=0)
+  audio-transcriber-mcp:
+    image: ghcr.io/gianverdum/audio-transcriber:latest
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    command: ["uv", "run", "audio-transcriber-mcp"]
+    networks:
+      - audio-transcriber-network
+    deploy:
+      mode: replicated
+      replicas: 0  # Keep disabled in the cluster - activate locally if needed
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  traefik_public:
+    external: true
+  audio-transcriber-network:
+    driver: overlay
+    attachable: true

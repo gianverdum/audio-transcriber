@@ -34,6 +34,30 @@ mcp = FastMCP(
     stateless_http=True
 )
 
+# Add health check endpoint for Docker/Portainer
+@mcp.get("/health")
+async def health_check():
+    """Health check endpoint for Docker health checks and load balancers"""
+    try:
+        # Quick validation that the service is ready
+        from audio_transcriber.core.config import settings
+        has_api_key = settings.validate_openai_key()
+        
+        return {
+            "status": "healthy" if has_api_key else "degraded",
+            "timestamp": datetime.now().isoformat(),
+            "service": "audio-transcriber-mcp-http",
+            "version": "1.0.0",
+            "openai_configured": has_api_key
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }
+
 @mcp.tool()
 async def transcribe_audio(input_data: TranscribeAudioInput) -> Dict[str, Any]:
     """
