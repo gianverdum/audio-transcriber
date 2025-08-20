@@ -2,11 +2,12 @@
 
 ## Project Architecture Overview
 
-**Audio Transcriber** is a multi-interface OpenAI Whisper transcription service with 4 distinct deployment patterns:
+**Audio Transcriber** is a multi-interface OpenAI Whisper transcription service with 5 distinct deployment patterns:
 - **CLI** (`audio-transcriber transcribe ./audios`) - Local batch processing
 - **REST API** (`audio-transcriber server`) - FastAPI web service  
 - **Docker** (`docker compose up`) - Containerized deployment
 - **AWS Lambda** - Serverless cloud deployment
+- **MCP Server** (`audio-transcriber-mcp`) - Model Context Protocol for AI agents
 
 ### Core Components
 
@@ -17,6 +18,10 @@
   - `main.py` - FastAPI app with comprehensive endpoints
   - `service.py` - API-specific business logic
   - `models.py` - Pydantic request/response models
+- **`src/audio_transcriber/mcp/`** - MCP Server for AI agents
+  - `server.py` - MCP protocol implementation
+  - `service.py` - URL-based transcription logic
+  - `models.py` - MCP-specific data models
 - **`src/audio_transcriber/cli.py`** - Command-line interface with dual-mode support
 
 ## Essential Development Patterns
@@ -52,6 +57,16 @@ uv run audio-transcriber server --host 0.0.0.0 --port 8000
 uv run audio-transcriber ./audios -o output.xlsx
 ```
 
+### MCP Server Pattern
+The MCP (Model Context Protocol) server enables AI agents to transcribe audio from URLs:
+```bash
+# Start MCP server for AI agent integration
+uv run audio-transcriber-mcp
+
+# Tools available: transcribe_audio, transcribe_batch, get_server_status
+```
+
+**Key difference**: MCP accepts URLs instead of file uploads, perfect for WhatsApp/messaging integration.
 ### Error Handling Pattern
 The codebase uses a consistent tuple return pattern for operations:
 ```python
@@ -68,6 +83,9 @@ uv run audio-transcriber server --reload
 
 # Production-like (no reload, multiple workers) 
 uv run audio-transcriber server --host 0.0.0.0 --workers 4
+
+# MCP Server for AI agents
+uv run audio-transcriber-mcp
 ```
 
 ### Testing Strategy
@@ -97,6 +115,11 @@ The system supports multiple output formats through a unified interface:
 - **JSON** - Structured API responses
 - **TXT** - Plain text transcriptions
 
+### MCP Server Integration
+- **URL-based processing**: Downloads audio from URLs (essential for WhatsApp/messaging)
+- **AI agent protocol**: Uses stdio communication for MCP clients
+- **Async architecture**: Handles concurrent downloads and transcriptions
+- **Error resilience**: Graceful handling of download failures and invalid URLs
 ### AWS Lambda Deployment
 Uses **Mangum** to wrap FastAPI for Lambda. Key considerations:
 - 15-minute Lambda timeout (set in `template.yaml`)
@@ -110,6 +133,7 @@ Uses **Mangum** to wrap FastAPI for Lambda. Key considerations:
 src/audio_transcriber/
 ├── core/           # Business logic (pure Python)
 ├── api/           # Web layer (FastAPI)
+├── mcp/           # MCP Server (AI agents protocol)
 └── cli.py         # Command-line interface
 ```
 
@@ -140,6 +164,9 @@ uv run audio-transcriber server           # Uses .env settings
 uv run audio-transcriber transcribe ./audios -o result.xlsx
 uv run audio-transcriber transcribe ./audios --language pt
 
+# MCP Server (for AI agents)
+uv run audio-transcriber-mcp                  # Start MCP server
+
 # Docker workflows  
 docker compose up                          # Auto-loads .env
 docker compose build                      # Required after DOCKER_PORT changes
@@ -155,6 +182,8 @@ cd aws && ./deploy.sh                     # SAM-based deployment
 - **Excel output**: Uses `openpyxl` with custom formatting (column widths, dual sheets)
 - **Health checks**: `/health` endpoint validates OpenAI connectivity
 - **CORS enabled**: API allows all origins (configure for production)
+- **MCP protocol**: Uses stdio for AI agent communication
+- **URL validation**: MCP server validates and downloads from URLs before processing
 
 When modifying this codebase:
 1. **Always use `uv run`** for Python commands
@@ -162,3 +191,4 @@ When modifying this codebase:
 3. **Follow the tuple return pattern** for error handling
 4. **Test both CLI and API interfaces** when changing core logic
 5. **Update both documentation endpoints** (`/docs`, `/redoc`) for API changes
+6. **Test MCP server** with `uv run audio-transcriber-mcp` for AI agent integration

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "audio-transcriber": {
+      "command": "uv",
+      "args": [
+        "run",
+        "audio-transcriber-mcp"
+      ],
+      "cwd": "/home/gianverdum/projects/asisto/audio-transcriber",
+      "env": {
+        "OPENAI_API_KEY": "your-openai-api-key-here"
+      }
+    }
+  }
+}

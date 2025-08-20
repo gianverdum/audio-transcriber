@@ -6,6 +6,7 @@ Complete tool for automatic audio file transcription using OpenAI API, available
 - **🌐 REST API** - Web server with FastAPI  
 - **☁️ AWS Lambda** - Serverless cloud deployment
 - **🐳 Docker** - Container for development and production
+- **🔗 MCP Server** - Model Context Protocol for AI agents integration
 
 ## 📋 Features
 
@@ -16,6 +17,8 @@ Complete tool for automatic audio file transcription using OpenAI API, available
 - **Batch processing support**
 - **AWS Lambda ready deployment**
 - **Docker container** for easy deployment
+- **MCP Server** for AI agents integration (WhatsApp, messaging platforms)
+- **URL-based transcription** for remote audio files
 - **Secure credentials system** with .env files
 - **Robust error handling** and detailed logging
 
@@ -332,7 +335,36 @@ sam build
 sam deploy --guided
 ```
 
-### 5️⃣ Programatically
+### 5️⃣ MCP Server (Model Context Protocol)
+
+For integration with AI agents and messaging applications like WhatsApp:
+
+```bash
+# Start MCP server
+uv run audio-transcriber-mcp
+
+# Configure in MCP client (e.g., Claude Desktop)
+# See MCP-SERVER.md for complete configuration
+```
+
+**Available MCP tools:**
+- `transcribe_audio` - Transcribe audio from URL
+- `transcribe_batch` - Transcribe multiple audios
+- `get_server_status` - Server status
+- `list_supported_formats` - Supported formats
+
+**Example usage via MCP:**
+```json
+{
+  "tool": "transcribe_audio",
+  "arguments": {
+    "audio_url": "https://media.whatsapp.com/voice/abc123.ogg",
+    "language": "pt"
+  }
+}
+```
+
+### 6️⃣ Programatically
 
 ```python
 # Standard use (local)
@@ -411,11 +443,16 @@ audio-transcriber/
 │       │   ├── __init__.py
 │       │   ├── config.py        # Configuration management
 │       │   └── transcriber.py   # AudioTranscriber class
-│       └── api/                 # API REST
+│       ├── api/                 # API REST
+│       │   ├── __init__.py
+│       │   ├── main.py          # FastAPI app
+│       │   ├── models.py        # Pydantic models
+│       │   └── service.py       # Transcription services
+│       └── mcp/                 # MCP Server
 │           ├── __init__.py
-│           ├── main.py          # FastAPI app
-│           ├── models.py        # Pydantic models
-│           └── service.py       # Transcription services
+│           ├── server.py        # MCP Server implementation
+│           ├── service.py       # MCP-specific services
+│           └── models.py        # MCP data models
 ├── tests/                       # Unit tests
 ├── examples/                    # Usage examples
 ├── scripts/                     # Utilitary scripts
@@ -427,6 +464,8 @@ audio-transcriber/
 │   ├── template.yaml           # SAM template
 │   ├── deploy.sh               # Deploy script
 │   └── lambda_handler.py       # Handler Lambda
+├── mcp-config.json             # MCP Server configuration example
+├── MCP-SERVER.md               # MCP Server documentation
 ├── Dockerfile                   # Docker container configuration
 ├── docker-compose.yml          # Docker Compose configuration
 ├── .env.example                # Configuration example
@@ -561,6 +600,9 @@ docker compose build && docker compose up
 
 # Local transcription
 uv run audio-transcriber transcribe ./my_audios -o result.xlsx
+
+# MCP Server (for AI agents integration)
+uv run audio-transcriber-mcp
 
 # Quick API test
 uv run python scripts/test_api.py
