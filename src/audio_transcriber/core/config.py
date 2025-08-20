@@ -37,6 +37,12 @@ class Settings:
     SERVER_RELOAD: bool = os.getenv("SERVER_RELOAD", "false").lower() == "true"
     
     # =============================================================================
+    # MCP SERVER SETTINGS
+    # =============================================================================
+    MCP_SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "0.0.0.0")
+    MCP_SERVER_PORT: int = int(os.getenv("MCP_SERVER_PORT", "8003"))
+    
+    # =============================================================================
     # API SETTINGS
     # =============================================================================
     API_TITLE: str = os.getenv("API_TITLE", "Audio Transcriber API")

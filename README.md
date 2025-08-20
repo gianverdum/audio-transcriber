@@ -82,9 +82,10 @@ uv run python scripts/setup_env.py
    OPENAI_API_KEY=sk-proj-your_real_key_here
    
    # API Server Configuration (optional)
-   SERVER_HOST=127.0.0.1
-   SERVER_PORT=8001
-   DOCKER_PORT=8000
+   SERVER_HOST=0.0.0.0
+   SERVER_PORT=8000
+   DOCKER_PORT=8001
+   MCP_DOCKER_PORT=8002
    
    # Processing Configuration (optional)
    MAX_FILE_SIZE_MB=25
@@ -114,8 +115,8 @@ OPENAI_API_KEY=sk-proj-your_real_key_here
 
 ### �📡 Server Configuration (optional)
 ```bash
-# Server host (default: 127.0.0.1)
-SERVER_HOST=127.0.0.1
+# Server host (default: 0.0.0.0)
+SERVER_HOST=0.0.0.0
 
 # Server port (default: 8000)
 SERVER_PORT=8000
@@ -184,7 +185,7 @@ uv run audio-transcriber server
 uv run audio-transcriber server --port 9000 --host 0.0.0.0 --reload
 
 # Verify if configuration is set correctly
-uv run python -c "from audio_transcriber.core.config import settings; print(f'Porta: {settings.SERVER_PORT}, Host: {settings.SERVER_HOST}')"
+uv run python -c "from audio_transcriber.core.config import settings; print(f'Port: {settings.SERVER_PORT}, Host: {settings.SERVER_HOST}')"
 ```
 
 ### 📋 Complete Configurations Table
@@ -194,12 +195,15 @@ uv run python -c "from audio_transcriber.core.config import settings; print(f'Po
 | **MANDATORY** |
 | `OPENAI_API_KEY` | string | - | OpenAI API Key |
 | **SERVER** |
-| `SERVER_HOST` | string | `127.0.0.1` | Server Host |
+| `SERVER_HOST` | string | `0.0.0.0` | Server Host |
 | `SERVER_PORT` | int | `8000` | Server Port |
 | `SERVER_WORKERS` | int | `1` | Number of Workers |
 | `SERVER_RELOAD` | bool | `false` | Auto-reload development |
 | **DOCKER** |
-| `DOCKER_PORT` | int | `8000` | Docker exposed port (requires rebuild) |
+| `DOCKER_PORT` | int | `8001` | Docker exposed port (requires rebuild) |
+| `MCP_DOCKER_PORT` | int | `8002` | MCP Server Docker port (requires rebuild) |
+| `MCP_SERVER_HOST` | string | `0.0.0.0` | MCP HTTP Server host |
+| `MCP_SERVER_PORT` | int | `8003` | MCP HTTP Server port |
 | **API** |
 | `API_TITLE` | string | `Audio Transcriber API` | API Title |
 | `API_VERSION` | string | `1.0.0` | API Version |
@@ -218,7 +222,7 @@ uv run python -c "from audio_transcriber.core.config import settings; print(f'Po
 
 > **💡 Tip:** Values of type `bool` should be `true` or `false` (lower case). Commented values `#` use setup default.
 
-> **🐳 Docker Note:** Changing `DOCKER_PORT` requires rebuilding the Docker image with `docker compose build` because the port is set as a build argument.
+> **🐳 Docker Note:** Changing `DOCKER_PORT` or `MCP_DOCKER_PORT` requires rebuilding the Docker image with `docker compose build` because the ports are set as build arguments.
 
 ## 📖 How to Use
 
@@ -257,7 +261,7 @@ uv run uvicorn audio_transcriber.api.main:app --reload
 
 ### 3️⃣ Docker
 
-#### Quick Start
+#### Quick Start - REST API
 ```bash
 # Using docker-compose (recommended - auto loads .env)
 docker compose up
@@ -265,13 +269,28 @@ docker compose up
 # Access API at: http://localhost:8001 (or your configured DOCKER_PORT)
 ```
 
+#### Quick Start - MCP Server
+```bash
+# Start MCP HTTP server for remote AI agents (VPS deployment)
+docker compose --profile mcp up
+
+# Or start MCP STDIO server for local AI agents
+docker compose --profile mcp-stdio up audio-transcriber-mcp
+
+# Or start both API and MCP HTTP
+docker compose --profile mcp up
+```
+
 #### Manual Docker Commands
 ```bash
 # Build image
 docker build -t audio-transcriber .
 
-# Run container with manual env
+# Run REST API
 docker run -p 8001:8001 -e OPENAI_API_KEY=your_key audio-transcriber
+
+# Run MCP Server
+docker run -it --env-file .env audio-transcriber uv run audio-transcriber-mcp
 ```
 
 #### 🔧 Docker Configuration
@@ -280,7 +299,14 @@ Docker configuration is done through the `.env` file:
 
 ```bash
 # Docker exposed port (maps to host)
-DOCKER_PORT=8000
+DOCKER_PORT=8001
+
+# MCP Server Docker port (for AI agents)
+MCP_DOCKER_PORT=8002
+
+# MCP Server HTTP settings (for remote access)
+MCP_SERVER_HOST=0.0.0.0
+MCP_SERVER_PORT=8003
 
 # Other variables are automatically loaded
 OPENAI_API_KEY=your_key_here
@@ -288,11 +314,25 @@ LOG_LEVEL=INFO
 MAX_FILE_SIZE_MB=25
 ```
 
+**Available Services:**
+
+| Service | Purpose | Use Case | Command | Access |
+|---------|---------|----------|---------|--------|
+| `audio-transcriber-api` | REST API Server | Web endpoints | `docker compose up` | `:${DOCKER_PORT}` |
+| `audio-transcriber-mcp-http` | MCP HTTP Server | Remote AI agents, VPS | `docker compose --profile mcp up` | `:${MCP_SERVER_PORT}` |
+| `audio-transcriber-mcp` | MCP STDIO Server | Local Claude Desktop | `docker compose --profile mcp-stdio up` | stdio |
+| `nginx` | Reverse Proxy | Production deployment | `docker compose --profile production up` | `:80/:443` |
+
 **docker-compose.yml features:**
-- ✅ **Auto .env loading**: Automatically loads `../env` 
-- ✅ **Configurable port**: Uses `DOCKER_PORT` from .env
-- ✅ **Health checks**: Built-in health monitoring
+- ✅ **Auto .env loading**: Automatically loads `.env` 
+- ✅ **Configurable ports**: Uses `DOCKER_PORT` and `MCP_DOCKER_PORT` from .env
+- ✅ **Health checks**: Built-in health monitoring (API only)
 - ✅ **Non-root execution**: Secure container execution
+- ✅ **Multi-service**: Supports both REST API and MCP Server
+- ✅ **Profile-based**: Optional services via profiles
+- ✅ **Custom networking**: Isolated internal communication
+
+> **📋 For detailed Docker + MCP setup, see [DOCKER-MCP.md](DOCKER-MCP.md)**
 
 #### ⚠️ Important: Build Requirements
 
@@ -300,7 +340,8 @@ When changing Docker-related variables in `.env`, you **MUST rebuild** the image
 
 ```bash
 # Variables that require rebuild:
-# - DOCKER_PORT (used as build argument)
+# - DOCKER_PORT (used as build argument for API)
+# - MCP_DOCKER_PORT (used as build argument for MCP Server)
 # - Any configuration affecting the Docker image
 
 # Rebuild after changing these variables:
@@ -309,7 +350,8 @@ docker compose up
 ```
 
 **Why rebuild is needed:**
-- `DOCKER_PORT` is passed as build argument (`APP_PORT`)
+- `DOCKER_PORT` is passed as build argument (`APP_PORT`) for REST API
+- `MCP_DOCKER_PORT` is passed as build argument for MCP Server
 - `EXPOSE` directive is "baked" into the image
 - Container startup command uses the build-time port
 
@@ -340,18 +382,36 @@ sam deploy --guided
 For integration with AI agents and messaging applications like WhatsApp:
 
 ```bash
-# Start MCP server
+# MCP HTTP Server (for VPS/remote deployment)
+uv run audio-transcriber-mcp-http
+
+# MCP STDIO Server (for local Claude Desktop)
 uv run audio-transcriber-mcp
 
-# Configure in MCP client (e.g., Claude Desktop)
+# Configure in MCP client (e.g., Claude Desktop or Anthropic MCP Connector)
 # See MCP-SERVER.md for complete configuration
 ```
 
 **Available MCP tools:**
-- `transcribe_audio` - Transcribe audio from URL
-- `transcribe_batch` - Transcribe multiple audios
-- `get_server_status` - Server status
-- `list_supported_formats` - Supported formats
+- `transcribe_audio`: Single file transcription from URL
+- `transcribe_batch`: Batch processing (up to 10 files)
+- `get_server_status`: Health check and status
+- `list_supported_formats`: Available audio formats
+
+**MCP Deployment Options:**
+- **HTTP Mode** (Port 8003): For VPS deployment, Portainer/Docker, or remote AI agents
+- **STDIO Mode**: For local Claude Desktop integration only
+
+**When to use each mode:**
+- **Use HTTP Mode** for: VPS deployment, WhatsApp integration, remote AI agents, production environments
+- **Use STDIO Mode** for: Local development with Claude Desktop
+
+**HTTP Mode Configuration (.env):**
+```bash
+# MCP HTTP Server settings (required for remote access)
+MCP_SERVER_HOST=0.0.0.0    # Allow external connections
+MCP_SERVER_PORT=8003       # HTTP port for MCP protocol
+```
 
 **Example usage via MCP:**
 ```json
@@ -601,7 +661,10 @@ docker compose build && docker compose up
 # Local transcription
 uv run audio-transcriber transcribe ./my_audios -o result.xlsx
 
-# MCP Server (for AI agents integration)
+# MCP Server HTTP (for VPS/remote AI agents)
+uv run audio-transcriber-mcp-http
+
+# MCP Server STDIO (for local Claude Desktop)
 uv run audio-transcriber-mcp
 
 # Quick API test

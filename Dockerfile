@@ -43,5 +43,7 @@ USER appuser
  # Expose port dynamically
 EXPOSE ${APP_PORT}
 
- # Default command
-CMD ["sh", "-c", "uv run uvicorn audio_transcriber.api.main:app --host 0.0.0.0 --port $APP_PORT"]
+ # Default command (can be overridden)
+# For API Server: docker run ... (uses default)
+# For MCP Server: docker run ... uv run audio-transcriber-mcp
+CMD ["sh", "-c", "uv run audio-transcriber server --host 0.0.0.0 --port $APP_PORT"]

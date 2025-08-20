@@ -1,4 +1,5 @@
 services:
+  # REST API Server
   audio-transcriber-api:
     build:
       context: .
@@ -23,6 +24,62 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - audio-transcriber-network
+
+  # MCP Server (for AI agents)
+  audio-transcriber-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_PORT=${MCP_DOCKER_PORT:-8002}  # Build argument (not used at runtime for MCP)
+    container_name: audio-transcriber-mcp
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=INFO
+      - MAX_FILE_SIZE_MB=25
+    volumes:
+      - ./logs:/app/logs
+    command: ["uv", "run", "audio-transcriber-mcp"]
+    restart: unless-stopped
+    stdin_open: true  # Required for MCP stdio communication
+    tty: true         # Required for MCP stdio communication
+    profiles:
+      - mcp-stdio  # Only start with --profile mcp-stdio
+    networks:
+      - audio-transcriber-network
+
+  # MCP HTTP Server (for remote AI agents)
+  audio-transcriber-mcp-http:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - APP_PORT=${MCP_SERVER_PORT:-8003}
+    container_name: audio-transcriber-mcp-http
+    ports:
+      - "${MCP_SERVER_PORT:-8003}:${MCP_SERVER_PORT:-8003}"
+    env_file:
+      - .env
+    environment:
+      - LOG_LEVEL=INFO
+      - MAX_FILE_SIZE_MB=25
+    volumes:
+      - ./logs:/app/logs
+    command: ["uv", "run", "audio-transcriber-mcp-http"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${MCP_SERVER_PORT:-8003}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    profiles:
+      - mcp  # Start with --profile mcp for HTTP version
+    networks:
+      - audio-transcriber-network
 
   # Nginx for reverse proxy (optional, for production)
   nginx:
@@ -37,6 +94,17 @@ services:
       - audio-transcriber-api
     profiles:
       - production
+    networks:
+      - audio-transcriber-network
 
 volumes:
   logs:
+
+networks:
+  audio-transcriber-network:
+    driver: bridge
+    name: audio-transcriber-net
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1

@@ -13,6 +13,34 @@ The Audio Transcriber MCP Server is a server that implements the Model Context P
 - **Language detection**: Manual or automatic language detection support
 - **File validation**: Size and format verification before processing
 
+## Deployment Modes
+
+The Audio Transcriber MCP Server supports two deployment modes:
+
+### STDIO Mode (Local Integration)
+- **Purpose**: Local integration with Claude Desktop and MCP clients
+- **Transport**: JSON-RPC over stdin/stdout
+- **Use Cases**: Development, local AI assistants, Claude Desktop integration
+- **Command**: `uv run audio-transcriber-mcp`
+
+### HTTP Mode (Remote Integration)
+- **Purpose**: Remote deployment for VPS, Docker, and remote AI agents
+- **Transport**: HTTP REST API with MCP-compatible endpoints
+- **Use Cases**: VPS deployment, WhatsApp integration, remote AI agents, production environments
+- **Command**: `uv run audio-transcriber-mcp-http`
+- **Default Port**: 8003 (configurable via `MCP_SERVER_PORT`)
+
+### When to Use Each Mode
+
+| Scenario | Recommended Mode | Reason |
+|----------|------------------|--------|
+| Claude Desktop integration | STDIO | Direct process communication |
+| Local development/testing | STDIO | Simpler setup, no network required |
+| VPS deployment with Portainer | HTTP | Remote access, container orchestration |
+| WhatsApp bot integration | HTTP | Web-accessible endpoint for webhooks |
+| Production AI agent deployment | HTTP | Scalable, network-accessible |
+| Multiple remote clients | HTTP | Concurrent access support |
+
 ## Installation and Configuration
 
 ### 1. Configure Dependencies
@@ -37,6 +65,8 @@ export OPENAI_API_KEY="sk-proj-your-key-here"
 
 ### 3. MCP Client Configuration
 
+#### STDIO Mode (Local Claude Desktop)
+
 Add to your MCP client configuration file (e.g., Claude Desktop):
 
 ```json
@@ -48,6 +78,43 @@ Add to your MCP client configuration file (e.g., Claude Desktop):
       "cwd": "/path/to/audio-transcriber",
       "env": {
         "OPENAI_API_KEY": "sk-proj-your-key-here"
+      }
+    }
+  }
+}
+```
+
+#### HTTP Mode (VPS/Remote Deployment)
+
+For HTTP mode, configure the server settings in `.env`:
+
+```bash
+# MCP HTTP Server Configuration
+MCP_SERVER_HOST=0.0.0.0      # Allow external connections
+MCP_SERVER_PORT=8003         # HTTP port for MCP protocol
+OPENAI_API_KEY=sk-proj-your-key-here
+```
+
+Start the HTTP server:
+```bash
+# Direct execution
+uv run audio-transcriber-mcp-http
+
+# Docker deployment
+docker compose --profile mcp up
+
+# Or via Docker with custom port mapping
+docker run -p 8003:8003 --env-file .env audio-transcriber uv run audio-transcriber-mcp-http
+```
+
+Configure your MCP client to connect via HTTP (example for Anthropic MCP Connector):
+```json
+{
+  "servers": {
+    "audio-transcriber": {
+      "url": "http://your-vps-ip:8003",
+      "headers": {
+        "Authorization": "Bearer your-auth-token"
       }
     }
   }
@@ -227,19 +294,33 @@ LOG_LEVEL=DEBUG uv run audio-transcriber-mcp
 
 The Audio Transcriber provides both MCP and REST API interfaces. Here are the key differences:
 
-| Feature | MCP Server | REST API |
-|---------|------------|----------|
-| **Input Method** | URLs only | File uploads + URLs |
-| **Output Format** | JSON only (protocol requirement) | JSON, Excel, CSV, TXT |
-| **Target Audience** | AI agents, automated systems | Web applications, direct usage |
-| **Protocol** | JSON-RPC over stdio | HTTP REST |
-| **Authentication** | Environment-based | HTTP headers/tokens |
-| **Batch Processing** | Up to 10 files | Unlimited |
-| **Use Cases** | WhatsApp bots, AI assistants | Web apps, manual processing |
+| Feature | MCP STDIO | MCP HTTP | REST API |
+|---------|-----------|----------|----------|
+| **Input Method** | URLs only | URLs only | File uploads + URLs |
+| **Output Format** | JSON only | JSON only | JSON, Excel, CSV, TXT |
+| **Target Audience** | Local AI agents | Remote AI agents | Web applications, direct usage |
+| **Protocol** | JSON-RPC over stdio | HTTP with MCP endpoints | HTTP REST |
+| **Authentication** | Environment-based | HTTP headers/tokens | HTTP headers/tokens |
+| **Batch Processing** | Up to 10 files | Up to 10 files | Unlimited |
+| **Deployment** | Local only | Network accessible | Network accessible |
+| **Use Cases** | Claude Desktop, local bots | VPS, WhatsApp bots, remote AI | Web apps, manual processing |
 
-> **When to use MCP**: Integration with AI agents, messaging platforms, automated workflows
+### Deployment Recommendations
+
+| Scenario | Recommended Option | Reason |
+|----------|-------------------|--------|
+| **Local Claude Desktop** | MCP STDIO | Direct integration, no network setup |
+| **VPS with Portainer** | MCP HTTP | Remote access, container orchestration |
+| **WhatsApp Integration** | MCP HTTP or REST API | Web-accessible endpoints |
+| **Web Application** | REST API | Full feature set, multiple formats |
+| **Development/Testing** | MCP STDIO | Simple setup, quick testing |
+| **Production AI Agents** | MCP HTTP | Scalable, concurrent access |
+
+> **When to use MCP STDIO**: Local development, Claude Desktop integration
 > 
-> **When to use REST API**: Web applications, manual file processing, need for multiple output formats
+> **When to use MCP HTTP**: VPS deployment, remote AI agents, production environments
+> 
+> **When to use REST API**: Web applications, manual processing, need for multiple output formats
 
 ## Additional Resources
 

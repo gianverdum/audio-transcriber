@@ -62,6 +62,7 @@ test = [
 audio-transcriber = "audio_transcriber.cli:main"
 audio-transcriber-server = "audio_transcriber.api.main:run_local"
 audio-transcriber-mcp = "audio_transcriber.mcp.server:main_sync"
+audio-transcriber-mcp-http = "audio_transcriber.mcp.http_server:main"
 
 [project.urls]
 Homepage = "https://github.com/usuario/audio-transcriber"
