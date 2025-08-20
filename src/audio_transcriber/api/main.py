@@ -9,9 +9,10 @@ from datetime import datetime
 from typing import List, Optional
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status  # type: ignore[import]
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status, Depends, Header  # type: ignore[import]
 from fastapi.responses import Response, JSONResponse  # type: ignore[import]
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import]
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  # type: ignore[import]
 import uvicorn  # type: ignore[import]
 
 from .models import (
@@ -103,6 +104,31 @@ app.add_middleware(
 # Global service instance
 transcription_service = None
 
+# Security setup
+security = HTTPBearer(auto_error=False)
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify authentication token if AUTH_TOKEN is set"""
+    if not settings.AUTH_TOKEN:
+        # No auth required if AUTH_TOKEN is not set
+        return True
+    
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization header missing",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if credentials.credentials != settings.AUTH_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return True
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -123,8 +149,81 @@ async def root():
         "version": settings.API_VERSION,
         "docs_url": "/docs",
         "health_url": "/health",
-        "languages_url": "/languages"
+        "languages_url": "/languages",
+        "status_url": "/status",
+        "auth_required": bool(settings.AUTH_TOKEN)
     }
+
+
+@app.get("/status", 
+         response_model=dict,
+         summary="API status with authentication",
+         description="Protected endpoint that shows API status (requires auth if AUTH_TOKEN is set)")
+async def get_status(authorized: bool = Depends(verify_token)):
+    """
+    ## API Status (Protected)
+    
+    Protected endpoint that shows detailed API status and configuration.
+    Requires Bearer token authentication if AUTH_TOKEN environment variable is set.
+    
+    ### Usage with authentication:
+    ```bash
+    curl -H "Authorization: Bearer your_token_here" http://localhost:8000/status
+    ```
+    
+    ### Example response:
+    ```json
+    {
+        "status": "operational",
+        "version": "1.0.0",
+        "timestamp": "2025-08-20T17:30:00.123456",
+        "auth_enabled": true,
+        "openai_configured": true,
+        "server_config": {
+            "host": "0.0.0.0",
+            "port": 8000,
+            "max_file_size_mb": 25
+        }
+    }
+    ```
+    """
+    try:
+        # Test OpenAI connection
+        test_transcriber = AudioTranscriber()
+        openai_configured = test_transcriber.client is not None
+        
+        return {
+            "status": "operational",
+            "version": settings.API_VERSION,
+            "timestamp": datetime.now(),
+            "auth_enabled": bool(settings.AUTH_TOKEN),
+            "openai_configured": openai_configured,
+            "server_config": {
+                "host": settings.SERVER_HOST,
+                "port": settings.SERVER_PORT,
+                "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
+                "api_timeout": settings.API_TIMEOUT,
+                "log_level": settings.LOG_LEVEL
+            },
+            "supported_formats": list(AudioTranscriber.SUPPORTED_FORMATS),
+            "endpoints": {
+                "health": "/health",
+                "transcribe": "/transcribe",
+                "batch": "/transcribe/batch",
+                "download": "/transcribe/download",
+                "languages": "/languages",
+                "docs": "/docs"
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "version": settings.API_VERSION,
+            "timestamp": datetime.now(),
+            "auth_enabled": bool(settings.AUTH_TOKEN),
+            "openai_configured": False,
+            "error": str(e)
+        }
 
 
 @app.get("/health", 
@@ -321,6 +420,7 @@ async def transcribe_audio(
         default=None, 
         description="Audio language in ISO-639-1 format (e.g., 'pt', 'en', 'es')"
     ),
+    authorized: bool = Depends(verify_token)
 ):
     """
     ## Transcribes a single audio file

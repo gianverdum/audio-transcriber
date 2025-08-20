@@ -19,6 +19,26 @@ class Settings:
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
     # =============================================================================
+    # AUTHENTICATION SETTINGS
+    # =============================================================================
+    AUTH_TOKEN: str = os.getenv("AUTH_TOKEN", "")
+    
+    @classmethod
+    def load_openai_key(cls) -> str:
+        """Load OpenAI API key from Docker secret or environment variable"""
+        # Try Docker secret first (for production)
+        secret_path = "/run/secrets/openai_api_key"
+        if os.path.exists(secret_path):
+            try:
+                with open(secret_path, 'r') as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+        
+        # Fallback to environment variable
+        return cls.OPENAI_API_KEY
+    
+    # =============================================================================
     # GENERAL SETTINGS
     # =============================================================================
     DEFAULT_AUDIO_FOLDER: str = os.getenv("DEFAULT_AUDIO_FOLDER", "./audios")
@@ -35,6 +55,12 @@ class Settings:
     SERVER_PORT: int = int(os.getenv("SERVER_PORT", "8000"))
     SERVER_WORKERS: int = int(os.getenv("SERVER_WORKERS", "1"))
     SERVER_RELOAD: bool = os.getenv("SERVER_RELOAD", "false").lower() == "true"
+    
+    # =============================================================================
+    # MCP SERVER SETTINGS
+    # =============================================================================
+    MCP_SERVER_HOST: str = os.getenv("MCP_SERVER_HOST", "0.0.0.0")
+    MCP_SERVER_PORT: int = int(os.getenv("MCP_SERVER_PORT", "8003"))
     
     # =============================================================================
     # API SETTINGS
@@ -55,7 +81,13 @@ class Settings:
     @classmethod
     def validate_openai_key(cls) -> bool:
         """Validates if OpenAI key is configured"""
-        return bool(cls.OPENAI_API_KEY and cls.OPENAI_API_KEY != "your_openai_key_here")
+        key = cls.load_openai_key()
+        return bool(key and key != "your_openai_key_here")
+    
+    @classmethod
+    def get_openai_key(cls) -> str:
+        """Get the OpenAI API key (Docker secret or env var)"""
+        return cls.load_openai_key()
     
     @classmethod
     def get_server_url(cls) -> str:

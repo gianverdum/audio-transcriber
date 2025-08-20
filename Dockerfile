@@ -1,15 +1,20 @@
  # Dockerfile for Audio Transcriber API
 FROM python:3.11-slim
 
- # Build arguments
-ARG APP_PORT
+# Metadata labels for Docker Hub
+LABEL org.opencontainers.image.title="Audio Transcriber" \
+      org.opencontainers.image.description="Complete tool for automatic audio file transcription using OpenAI API with REST API and MCP Server support" \
+      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.authors="Audio Transcriber Team" \
+      org.opencontainers.image.url="https://github.com/gianverdum/audio-transcriber" \
+      org.opencontainers.image.source="https://github.com/gianverdum/audio-transcriber" \
+      org.opencontainers.image.licenses="MIT"
 
  # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    APP_PORT=${APP_PORT}
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
  # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -24,14 +29,12 @@ WORKDIR /app
 
  # Copy configuration files
 COPY pyproject.toml uv.lock* ./
-COPY README.md ./
 
  # Install uv
 RUN pip install uv
 
  # Copy source code
 COPY src/ ./src/
-COPY .env.example .env
 
  # Install dependencies
 RUN uv sync --frozen
@@ -40,8 +43,10 @@ RUN uv sync --frozen
 RUN mkdir -p /home/appuser/.cache && chown -R appuser:appuser /app /home/appuser/.cache
 USER appuser
 
- # Expose port dynamically
-EXPOSE ${APP_PORT}
+ # Expose port
+EXPOSE 8000
 
- # Default command
-CMD ["sh", "-c", "uv run uvicorn audio_transcriber.api.main:app --host 0.0.0.0 --port $APP_PORT"]
+ # Default command (can be overridden)
+# For API Server: docker run ... (uses default)
+# For MCP Server: docker run ... uv run audio-transcriber-mcp
+CMD ["sh", "-c", "uv run audio-transcriber server --host 0.0.0.0 --port 8000"]

@@ -1,0 +1,61 @@
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+id_*
+
+# Git
+.git
+.gitignore
+
+# Documentation (keep README.md for image info)
+*.md
+!README.md
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific directories
+audios/
+output/
+logs/
+examples/
+scripts/
+tests/
+aws/
+docker/
+
+# Output files
+*.xlsx
+*.csv
+
+# Development
+dist/
+build/
+*.egg-info/
+
+# Temporary files
+tmp/
+temp/
