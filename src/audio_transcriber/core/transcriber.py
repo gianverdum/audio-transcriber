@@ -140,6 +140,14 @@ class AudioTranscriber:
         for file_path in folder.rglob('*'):
             if file_path.is_file() and file_path.suffix.lower() in self.SUPPORTED_FORMATS:
                 audio_files.append(file_path)
+            elif file_path.is_file():
+                # Convert unsupported format and append the converted file
+                try:
+                    converted_path = self.convert_audio_format(file_path)
+                    audio_files.append(converted_path)
+                    logger.info(f"Converted and added: {file_path.name} -> {converted_path.name}")
+                except Exception as e:
+                    logger.warning(f"Could not convert {file_path.name}: {e}")
 
         # Sorts files by name
         audio_files.sort(key=lambda x: x.name)

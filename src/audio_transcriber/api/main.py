@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import List, Optional
 from pathlib import Path
 
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status, Depends, Header  # type: ignore[import]
 from fastapi.responses import Response, JSONResponse  # type: ignore[import]
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore[import]
@@ -25,7 +26,12 @@ from .models import (
 )
 from .service import TranscriptionService
 from ..core import AudioTranscriber
+
 from ..core.config import settings
+
+# Logger for warnings and info
+import logging
+logger = logging.getLogger(__name__)
 
 # Create application instance using centralized configurations
 app = FastAPI(
@@ -472,10 +478,7 @@ async def transcribe_audio(
     
     file_extension = Path(file.filename).suffix.lower()
     if file_extension not in AudioTranscriber.SUPPORTED_FORMATS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported format. Accepted formats: {', '.join(AudioTranscriber.SUPPORTED_FORMATS)}"
-        )
+        logger.warning(f"File format {file_extension} not natively supported. Will attempt conversion in core logic.")
     
     # Read file content
     try:
