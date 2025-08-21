@@ -20,6 +20,33 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 class AudioTranscriber:
+    def convert_audio_format(self, file_path: Path, target_ext: str = ".wav") -> Path:
+        """
+        Converts an audio file to a supported format using ffmpeg-python.
+        The converted file will have the original name plus a sufix.
+        Args:
+            file_path: Path to the original audio file
+            target_ext: Target extension (default: .wav)
+        Returns:
+            Path to the converted file
+        """
+        import ffmpeg
+        import tempfile
+        original_name = file_path.stem
+        temp_dir = tempfile.gettempdir()
+        converted_name = f"{original_name}{file_path.suffix}__converted{target_ext}"
+        converted_path = Path(temp_dir) / converted_name
+        try:
+            (
+                ffmpeg.input(str(file_path))
+                .output(str(converted_path), format=target_ext.lstrip("."))
+                .run(overwrite_output=True, quiet=True)
+            )
+            logger.info(f"Converted {file_path.name} to {converted_path.name}")
+            return converted_path
+        except Exception as e:
+            logger.error(f"Error converting {file_path.name}: {e}")
+            raise RuntimeError(f"Failed to convert audio file: {file_path.name}")
     """Main class for audio transcription"""
 
     # Supported audio formats by OpenAI
@@ -152,9 +179,15 @@ class AudioTranscriber:
         try:
             logger.info(f"Transcribing: {file_path.name}")
 
-            with open(file_path, "rb") as audio_file:
+            # Check format and convert if needed
+            file_to_transcribe = file_path
+            if file_path.suffix.lower() not in self.SUPPORTED_FORMATS:
+                logger.info(f"File format {file_path.suffix} not supported. Converting...")
+                file_to_transcribe = self.convert_audio_format(file_path)
+
+            with open(file_to_transcribe, "rb") as audio_file:
                 # Checks file size against configuration
-                file_size = file_path.stat().st_size
+                file_size = file_to_transcribe.stat().st_size
                 max_size = self.config['max_file_size_mb'] * 1024 * 1024
                 if file_size > max_size:
                     return "", False, f"File too large (>{self.config['max_file_size_mb']}MB)"
@@ -173,9 +206,17 @@ class AudioTranscriber:
 
                 # Calls the OpenAI API
                 transcription = self.client.audio.transcriptions.create(**api_params)
-                
+
+                # Clean up temp file if conversion was done
+                if file_to_transcribe != file_path:
+                    try:
+                        file_to_transcribe.unlink()
+                        logger.info(f"Deleted temporary file: {file_to_transcribe}")
+                    except Exception as cleanup_err:
+                        logger.warning(f"Could not delete temp file: {file_to_transcribe} ({cleanup_err})")
+
                 return transcription, True, ""
-                
+
         except Exception as e:
             error_msg = f"Error in transcription: {str(e)}"
             logger.error(f"{file_path.name}: {error_msg}")

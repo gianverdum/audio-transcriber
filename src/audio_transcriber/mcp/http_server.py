@@ -9,6 +9,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 from mcp.server.fastmcp import FastMCP  # type: ignore[import-untyped]
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from .service import MCPTranscriptionService
 from .models import (
@@ -35,28 +37,26 @@ mcp = FastMCP(
 )
 
 # Add health check endpoint for Docker/Portainer
-@mcp.get("/health")
-async def health_check():
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request: Request):
     """Health check endpoint for Docker health checks and load balancers"""
     try:
-        # Quick validation that the service is ready
         from audio_transcriber.core.config import settings
         has_api_key = settings.validate_openai_key()
-        
-        return {
+        return JSONResponse({
             "status": "healthy" if has_api_key else "degraded",
             "timestamp": datetime.now().isoformat(),
             "service": "audio-transcriber-mcp-http",
             "version": "1.0.0",
             "openai_configured": has_api_key
-        }
+        })
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        return {
+        return JSONResponse({
             "status": "unhealthy",
             "timestamp": datetime.now().isoformat(),
             "error": str(e)
-        }
+        })
 
 @mcp.tool()
 async def transcribe_audio(input_data: TranscribeAudioInput) -> Dict[str, Any]:

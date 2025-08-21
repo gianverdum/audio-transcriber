@@ -32,12 +32,14 @@ class TestAudioTranscriber(unittest.TestCase):
         """Tests initialization with API key"""
         with patch('audio_transcriber.core.transcriber.OpenAI') as mock_openai:
             transcriber = AudioTranscriber(api_key="test_key")
-            self.assertEqual(transcriber.api_key, "test_key")
+            self.assertEqual(transcriber.openai_api_key, "test_key")
             mock_openai.assert_called_once_with(api_key="test_key", timeout=30)
     
     def test_init_without_api_key(self):
         """Tests initialization without API key"""
-        with patch.dict(os.environ, {}, clear=True):
+        with patch('audio_transcriber.core.config.settings.get_openai_key', return_value=None), \
+             patch('dotenv.load_dotenv'), \
+             patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(ValueError):
                 AudioTranscriber()
     
@@ -46,7 +48,7 @@ class TestAudioTranscriber(unittest.TestCase):
         with patch.dict(os.environ, {'OPENAI_API_KEY': 'env_test_key'}):
             with patch('audio_transcriber.core.transcriber.OpenAI') as mock_openai:
                 transcriber = AudioTranscriber()
-                self.assertEqual(transcriber.api_key, "env_test_key")
+                self.assertEqual(transcriber.openai_api_key, "env_test_key")
                 mock_openai.assert_called_once_with(api_key="env_test_key", timeout=30)
     
     def test_find_audio_files_empty_folder(self):
@@ -152,7 +154,7 @@ class TestAudioTranscriberIntegration(unittest.TestCase):
         """Tests real API connection (only if key is configured)"""
         transcriber = AudioTranscriber()
         self.assertIsNotNone(transcriber.client)
-        self.assertIsNotNone(transcriber.api_key)
+        self.assertIsNotNone(transcriber.openai_api_key)
 
 
 if __name__ == '__main__':
